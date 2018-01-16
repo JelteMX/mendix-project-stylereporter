@@ -8,6 +8,7 @@ import when = require('when');
 import util = require('util');
 import chalk from 'chalk';
 import * as _ from 'lodash';
+import fs = require('fs-extra');
 
 import Excel from './excel';
 import Store from './lib/store';
@@ -105,10 +106,22 @@ async function main() {
     store.store.unused.snippet = unusedSnippets;
 
     if (excelFileName !== '') {
+        try {
+            await fs.ensureFile(excelFileName);
+        } catch (e) {
+            console.log(`Error with storing file at ${excelFileName}:`, e);
+            process.exit(1);
+        }
         excelFile.writeFile(excelFileName);
         console.log(`File written: ${excelFileName}`);
     }
     if (jsonFileName !== '') {
+        try {
+            await fs.ensureFile(jsonFileName);
+        } catch (e) {
+            console.log(`Error with storing file at ${jsonFileName}:`, e);
+            process.exit(1);
+        }
         store.writeFile(jsonFileName);
         console.log(`File written: ${jsonFileName}`);
     }
