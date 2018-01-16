@@ -1,4 +1,4 @@
-mendix-project-stylereporter
+mendix-project-stylereporter [![NPM version][npm-image]][npm-url] [![Dependency Status][daviddm-image]][daviddm-url]
 ===
 
 This project was created in the Mendix Crafting Days and will help you determine which styles are used where. This is helpful when doing the styling of a project.
@@ -87,3 +87,8 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+
+[npm-image]: https://badge.fury.io/js/mendix-project-stylereporter.svg
+[npm-url]: https://npmjs.org/package/mendix-project-stylereporter
+[daviddm-image]: https://david-dm.org/JelteMX/mendix-project-stylereporter.svg?theme=shields.io
+[daviddm-url]: https://david-dm.org/JelteMX/mendix-project-stylereporter
