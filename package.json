@@ -26,19 +26,19 @@
   "author": "Jelte Lagendijk <jelte.lagendijk@mendix.com>",
   "license": "MIT",
   "dependencies": {
-    "chalk": "^2.3.0",
-    "dotenv": "^4.0.0",
-    "fs-extra": "^5.0.0",
-    "lodash": "^4.17.4",
+    "chalk": "^2.4.1",
+    "dotenv": "^6.0.0",
+    "fs-extra": "^7.0.0",
+    "lodash": "^4.17.10",
     "mendixmodelsdk": "^4.13.0",
     "mendixplatformsdk": "^4.0.0",
     "when": "^3.7.8",
-    "xlsx": "^0.11.17"
+    "xlsx": "^0.11.19"
   },
   "devDependencies": {
     "@types/chalk": "^2.2.0",
     "@types/lodash": "^4.14.115",
-    "@types/node": "^9.6.24",
+    "@types/node": "^10.5.4",
     "@types/when": "^2.4.31",
     "typescript": "^3.0.1"
   }
