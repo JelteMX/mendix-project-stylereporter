@@ -9,10 +9,6 @@ import chalk from 'chalk';
 
 import { getPropertyFromStructure, Logger, getPropertyList } from './helpers';
 
-export function loadAllSnippets(model: IModel): When.Promise<pages.Snippet[]> {
-    return when.all(model.allSnippets().map(snippet => new Promise((resolve, reject) => { snippet.load(resolve) })));
-}
-
 export function processSnippets(snippets: pages.Snippet[], sheet: Sheet, moduleName: string, logger: Logger, store: Store) {
     return new Promise((resolve, reject) => {
         snippets.forEach(snippet => {

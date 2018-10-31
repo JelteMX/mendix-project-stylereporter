@@ -12,7 +12,7 @@ import fs = require('fs-extra');
 
 import Excel from './excel';
 import Store from './lib/store';
-import { Logger, getPropertyFromStructure } from './lib/helpers';
+import { Logger, getPropertyFromStructure, loadAllPages, loadAllSnippets, loadAllLayouts, loadAllMicroflows } from './lib/helpers';
 
 // Only edit this part!
 const projectId = process.env.PROJECT_ID;
@@ -32,12 +32,13 @@ const revNo = -1; // -1 for latest
 const branchName = null // null for mainline
 const wc = null;
 
-import { loadAllPages, processPagesElements } from './lib/pages';
-import { loadAllSnippets, processSnippets } from './lib/snippets';
-import { loadAllLayouts, processLayouts } from './lib/layouts';
+import { processPagesElements } from './lib/pages';
+import { processSnippets } from './lib/snippets';
+import { processLayouts } from './lib/layouts';
+import { processMicroflows } from './lib/microflows';
 
 const excelFile = new Excel();
-const excelOutput = excelFile.createSheet('overview', [
+const overviewSheet = excelFile.createSheet('overview', [
     'Location Type',
     'Location Name',
     'Layout',
@@ -47,6 +48,12 @@ const excelOutput = excelFile.createSheet('overview', [
     'Style',
     'Snippet Reference',
     'Widget ID'
+]);
+
+const microflowSheet = excelFile.createSheet('microflows', [
+    'Type',
+    'Name',
+    'Open page action'
 ]);
 
 if (!username || !apikey) {
@@ -85,16 +92,51 @@ async function main() {
         process.exit(1);
     }
 
-    const pages = await loadAllPages(model); util.log(`pages loaded`);
-    const snippets = await loadAllSnippets(model); util.log(`snippets loaded`);
-    const layouts = await loadAllLayouts(model); util.log(`layouts loaded`);
+    let pages: pages.Page[],
+        snippets: pages.Snippet[],
+        layouts: pages.Layout[],
+        microflows: microflows.Microflow[];
+
+    try {
+        util.log('loading pages');
+        pages = await loadAllPages(model);
+        util.log(`pages loaded`);
+    } catch (error) {
+        console.log('Error loading pages', error);
+        process.exit(1);
+    }
+    try {
+        util.log('loading snippets');
+        snippets = await loadAllSnippets(model);
+        util.log(`snippets loaded`);
+    } catch (error) {
+        console.log('Error loading snippets', error);
+        process.exit(1);
+    }
+    try {
+        util.log('loading layouts');
+        layouts = await loadAllLayouts(model);
+        util.log(`layouts loaded`);
+    } catch (error) {
+        console.log('Error loading layouts', error);
+        process.exit(1);
+    }
+    try {
+        util.log('loading microflows');
+        microflows = await loadAllMicroflows(model);
+    } catch (e) {
+        console.log('Error loading microflows', e);
+        process.exit(1);
+    }
 
     logger.log(`=====================[ PAGES ]========================\n`);
-    await processPagesElements(pages, excelOutput, moduleName, logger, store);
+    await processPagesElements(pages, overviewSheet, moduleName, logger, store);
     logger.log(`\n=====================[ SNIPPETS ]========================\n`);
-    await processSnippets(snippets, excelOutput, moduleName, logger, store);
+    await processSnippets(snippets, overviewSheet, moduleName, logger, store);
     logger.log(`\n=====================[ LAYOUTS ]========================\n`);
-    await processLayouts(layouts, excelOutput, moduleName, logger, store);
+    await processLayouts(layouts, overviewSheet, moduleName, logger, store);
+    logger.log(`=====================[ MICROFLOWS ]========================\n`);
+    await processMicroflows(microflows, microflowSheet, moduleName, logger, store);
 
     const snippetsList = _.uniq(snippets.map(sn => sn.qualifiedName));
     const layoutsList = _.uniq(layouts.map(lo => lo.qualifiedName));

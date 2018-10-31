@@ -9,10 +9,6 @@ import chalk from 'chalk';
 
 import { getPropertyFromStructure, Logger } from './helpers';
 
-export function loadAllPages(model: IModel): When.Promise<pages.Page[]> {
-    return when.all(model.allPages().map(page => new Promise((resolve, reject) => { page.load(resolve) })));
-}
-
 export function processPagesElements(allPages: pages.Page[], sheet: Sheet, moduleName: string, logger: Logger, store: Store) {
     return new Promise((resolve, reject) => {
         allPages.forEach(page => {
