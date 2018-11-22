@@ -8,3 +8,4 @@ output/**/*.xlsx
 .env
 dist
 .DS_Store
+working_copy_cache.json
