@@ -8,6 +8,7 @@ import util = require('util');
 import chalk from 'chalk';
 
 import { getPropertyFromStructure, Logger, getPropertyList } from './helpers';
+import { createCustomWidgetObject} from './widgets';
 
 export function processSnippets(snippets: pages.Snippet[], sheet: Sheet, moduleName: string, logger: Logger, store: Store) {
     return new Promise((resolve, reject) => {
@@ -73,7 +74,8 @@ export function processSnippets(snippets: pages.Snippet[], sheet: Sheet, moduleN
                         logger.log(`    ${logger.spec('widget')}:    ${widgetID}`);
                         line.push(widgetID);
                         if (widgetID !== null) {
-                            store.addWidget(widgetID, `Snippet:${snippet.qualifiedName}`);
+                            const widgetObj = createCustomWidgetObject(widgetStructure, nameProp.get(), widgetID);
+                            store.addWidget(widgetID, `Snippet:${snippet.qualifiedName}`, widgetObj);
                         }
                     }
 

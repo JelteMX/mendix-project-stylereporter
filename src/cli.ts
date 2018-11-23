@@ -59,6 +59,7 @@ import { processSnippets } from './lib/snippets';
 import { processLayouts } from './lib/layouts';
 import { processMicroflows } from './lib/microflows';
 import { allowStateChanges } from "mobx/lib/internal";
+import { exists } from "fs-extra";
 
 const excelFile = new Excel();
 const overviewSheet = excelFile.createSheet('overview', [
@@ -175,6 +176,7 @@ async function main() {
         console.log('Error loading pages', error);
         process.exit(1);
     }
+
     try {
         util.log('loading snippets');
         snippets = await loadAllSnippets(model);
@@ -185,6 +187,7 @@ async function main() {
         console.log('Error loading snippets', error);
         process.exit(1);
     }
+
     try {
         util.log('loading layouts');
         layouts = await loadAllLayouts(model);
@@ -195,6 +198,7 @@ async function main() {
         console.log('Error loading layouts', error);
         process.exit(1);
     }
+
     try {
         util.log('loading microflows');
         microflows = await loadAllMicroflows(model);
@@ -205,7 +209,6 @@ async function main() {
         console.log('Error loading microflows', e);
         process.exit(1);
     }
-
 
     const snippetsList = _.uniq(snippets.map(sn => sn.qualifiedName));
     const layoutsList = _.uniq(layouts.map(lo => lo.qualifiedName));
@@ -245,9 +248,4 @@ function getWorkingCopy(client: MendixSdkClient, id: string): Promise<IModel> {
     })
 }
 
-// if (workingCopyId) {
-    main();
-// } else {
-//     console.log('No working copy provided. Running the loader');
-//     load();
-// }
+main();

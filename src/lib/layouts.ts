@@ -8,6 +8,7 @@ import util = require('util');
 import chalk from 'chalk';
 
 import { getPropertyFromStructure, getPropertyList, Logger } from './helpers';
+import { createCustomWidgetObject} from './widgets';
 
 export function processLayouts(layouts: pages.Layout[], sheet: Sheet, moduleName: string, logger: Logger, store: Store) {
     return new Promise((resolve, reject) => {
@@ -76,7 +77,8 @@ export function processLayouts(layouts: pages.Layout[], sheet: Sheet, moduleName
                         logger.log(`         ${logger.spec('widget')}:    ${widgetID}`);
                         line.push(widgetID);
                         if (widgetID !== null) {
-                            store.addWidget(widgetID, `Layout:${layout.qualifiedName}`);
+                            const widgetObj = createCustomWidgetObject(widgetStructure, nameElProp.get(), widgetID);
+                            store.addWidget(widgetID, `Layout:${layout.qualifiedName}`, widgetObj);
                         }
                     }
 

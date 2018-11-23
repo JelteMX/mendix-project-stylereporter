@@ -18,7 +18,8 @@ interface Store {
         unused: {
             snippet: string[],
             layout: string[]
-        }
+        },
+        widgetObjects: any[]
     }
 }
 
@@ -32,7 +33,8 @@ class Store {
             unused: {
                 snippet: [],
                 layout: []
-            }
+            },
+            widgetObjects: []
         }
     }
 
@@ -70,9 +72,13 @@ class Store {
         this.addToUsedId(found, usedId);
     }
 
-    addWidget(id: string, usedId: string) {
+    addWidget(id: string, usedId: string, widgetObj?: any) {
         const found = this.findOrCreate('widget', id) as Widget;
         this.addToUsedId(found, usedId);
+        if (widgetObj) {
+            widgetObj.usedIn = usedId;
+            this.store.widgetObjects.push(widgetObj)
+        }
     }
 
     addClasses(classString: string) {
@@ -93,7 +99,7 @@ class Store {
     }
 
     toJSON(): string {
-        return JSON.stringify(this.store, null, 4);
+        return JSON.stringify(this.store, null, 2);
     }
 
     writeFile(filename: string) {

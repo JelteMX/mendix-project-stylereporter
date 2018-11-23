@@ -7,7 +7,8 @@ import Store from './store';
 import util = require('util');
 import chalk from 'chalk';
 
-import { getPropertyFromStructure, Logger } from './helpers';
+import { getPropertyFromStructure, Logger, getPropertyList, getPropertyListValues } from './helpers';
+import { createCustomWidgetObject} from './widgets';
 
 export function processPagesElements(allPages: pages.Page[], sheet: Sheet, moduleName: string, logger: Logger, store: Store) {
     return new Promise((resolve, reject) => {
@@ -80,7 +81,8 @@ export function processPagesElements(allPages: pages.Page[], sheet: Sheet, modul
                         logger.log(`    ${logger.spec('widget')}:    ${widgetID}`);
                         line.push(widgetID);
                         if (widgetID !== null) {
-                            store.addWidget(widgetID, `Page:${page.qualifiedName}`);
+                            const widgetObj = createCustomWidgetObject(widgetStructure, nameProp.get(), widgetID);
+                            store.addWidget(widgetID, `Page:${page.qualifiedName}`, widgetObj);
                         }
                     }
 
@@ -92,3 +94,22 @@ export function processPagesElements(allPages: pages.Page[], sheet: Sheet, modul
         resolve();
     });
 }
+
+/*
+TYPE: [ 'key',
+  'category',
+  'caption',
+  'description',
+  'isDefault',
+  'valueType' ]
+VALUE: [ 'type',
+  'primitiveValue',
+  'entityPath',
+  'attributePath',
+  'page',
+  'microflow',
+  'image',
+  'translatableValue',
+  'xPathConstraint',
+  'objects' ]
+*/
