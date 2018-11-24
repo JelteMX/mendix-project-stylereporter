@@ -17,76 +17,37 @@ export function getPropertyList(structure: IStructure) {
     return structure.allProperties().map(prop => prop.name).filter(n => typeof n !== 'undefined');
 }
 
-export function loadAllLayouts(model: IModel): When.Promise<pages.Layout[]> {
-    const all = model.allLayouts();
+function loadDocuments(all: any[], identifier?: string): When.Promise<any> {
     let loaded = 0;
-    console.log(`Loading ${all.length} layouts`);
+    console.log(`Loading ${all.length} ${identifier}s`);
     return when
-        .all(all.map(layout => new Promise((resolve, reject) => {
+        .all(all.map(form => new Promise((resolve, reject) => {
             try {
-                layout.load(el => {
-                    console.log(`Loaded ${loaded++}/${all.length} layouts`);
+                form.load(el => {
+                    console.log(`Loaded ${loaded++}/${all.length} ${identifier}s`);
                     resolve(el);
                 });
             } catch (e) {
-                console.log('Error loading layout', e)
+                console.log(`Error loading ${identifier}`, e)
                 reject(e);
             }
         })));
+}
+
+export function loadAllLayouts(model: IModel): When.Promise<pages.Layout[]> {
+    return (<When.Promise<pages.Layout[]>>loadDocuments(model.allLayouts(), 'layout'));
 }
 
 export function loadAllPages(model: IModel): When.Promise<pages.Page[]> {
-    const all = model.allPages();
-    let loaded = 0;
-    console.log(`Loading ${all.length} pages`);
-    return when
-        .all(all.map(page => new Promise((resolve, reject) => {
-            try {
-                page.load(el => {
-                    console.log(`Loaded ${loaded++}/${all.length} pages`);
-                    resolve(el);
-                });
-            } catch (e) {
-                console.log('Error loading page', e)
-                reject(e);
-            }
-        })));
+    return (<When.Promise<pages.Page[]>>loadDocuments(model.allPages(), 'page'));
 }
 
 export function loadAllSnippets(model: IModel): When.Promise<pages.Snippet[]> {
-    const all = model.allSnippets();
-    let loaded = 0;
-    console.log(`Loading ${all.length} snippets`);
-    return when
-        .all(all.map(snippet => new Promise((resolve, reject) => {
-            try {
-                snippet.load(el => {
-                    console.log(`Loaded ${loaded++}/${all.length} snippets`);
-                    resolve(el);
-                }) ;
-            }catch (e) {
-                console.log('Error loading snippet', e)
-                reject(e);
-            }
-        })));
+    return (<When.Promise<pages.Snippet[]>>loadDocuments(model.allSnippets(), 'snippet'));
 }
 
 export function loadAllMicroflows(model: IModel): When.Promise<microflows.Microflow[]> {
-    const all = model.allMicroflows();
-    let loaded = 0;
-    console.log(`Loading ${all.length} microflow`);
-    return when
-        .all(all.map(microflow => new Promise((resolve, reject) => {
-            try {
-                microflow.load(el => {
-                    console.log(`Loaded ${loaded++}/${all.length} microflow`);
-                    resolve(el);
-                }) ;
-            }catch (e) {
-                console.log('Error loading microflow', e)
-                reject(e);
-            }
-        })));
+    return (<When.Promise<microflows.Microflow[]>>loadDocuments(model.allMicroflows(), 'microflow'));
 }
 
 export interface Logger {
