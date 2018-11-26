@@ -6,16 +6,14 @@ import { ensureFile, readJSON, writeJSON } from 'fs-extra';
 import * as _ from 'lodash';
 import { IModel, microflows, pages } from "mendixmodelsdk";
 import { Branch, MendixSdkClient, OnlineWorkingCopy, Project, Revision } from "mendixplatformsdk";
-import Excel from './excel';
+import Excel from './lib/excel';
 import { loadAllLayouts, loadAllMicroflows, loadAllPages, loadAllSnippets, Logger } from './lib/helpers';
 import { processLayouts } from './lib/layouts';
 import { processMicroflows } from './lib/microflows';
 import { processPagesElements } from './lib/pages';
 import { processSnippets } from './lib/snippets';
 import Store from './lib/store';
-
 import util = require('util');
-
 
 const {
     PROJECT_ID,
@@ -38,8 +36,8 @@ const store = new Store();
 const revNo = -1; // -1 for latest
 const branchName = typeof BRANCH !== 'undefined' ? BRANCH : null;
 const cacheKey = `${PROJECT_TITLE}-${PROJECT_ID}-${branchName !== null ? branchName : 'main'}`;
-let wc_cache:any = {} // null for mainline
 
+let wc_cache:any = {} // null for mainline
 const loadWcCache = () => new Promise(async (resolve, reject) => {
     try {
         const cacheFile = await readJSON('./working_copy_cache.json');
@@ -110,6 +108,12 @@ function loadWorkingCopy():Promise<OnlineWorkingCopy> {
             reject(error);
         })
     });
+}
+
+function getWorkingCopy(client: MendixSdkClient, id: string): Promise<IModel> {
+    return new Promise((resolve, reject) => {
+        client.model().openWorkingCopy(id, resolve, reject);
+    })
 }
 
 async function main() {
@@ -240,13 +244,6 @@ async function main() {
         store.writeFile(jsonFileName);
         console.log(`File written: ${jsonFileName}`);
     }
-}
-
-// Processing
-function getWorkingCopy(client: MendixSdkClient, id: string): Promise<IModel> {
-    return new Promise((resolve, reject) => {
-        client.model().openWorkingCopy(id, resolve, reject);
-    })
 }
 
 main();

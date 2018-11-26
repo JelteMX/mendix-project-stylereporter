@@ -121,12 +121,12 @@ export function createCustomWidgetObject(widgetStructure:customwidgets.CustomWid
     return widget;
 }
 
-export function handleWidget(structure: IStructure, logger: Logger, line: string[], name: string, store: Store, location: string) {
+export function handleWidget(structure: IStructure, { log, spec }: Logger, line: string[], name: string, store: Store, location: string) {
     const widgetStructure = structure as customwidgets.CustomWidget;
     const widgetJSON = widgetStructure.toJSON() as any;
     const widgetID = widgetJSON.type && widgetJSON.type.widgetId || null;
 
-    logger.log(`         ${logger.spec('widget')}:    ${widgetID}`);
+    log(`         ${spec('widget')}:    ${widgetID}`);
     line.push(widgetID);
     if (widgetID !== null) {
         const widgetObj = createCustomWidgetObject(widgetStructure, name, widgetID);

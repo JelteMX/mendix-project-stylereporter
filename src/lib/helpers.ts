@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { AbstractProperty, IModel, IStructure, microflows, pages } from "mendixmodelsdk";
+import { AbstractProperty, IModel, IStructure, microflows, pages, Model, javaactions } from "mendixmodelsdk";
 import when = require('when');
 
 export function getPropertyFromStructure(structure: IStructure , propName: string): AbstractProperty<any, any> {
@@ -47,6 +47,10 @@ export function loadAllSnippets(model: IModel): When.Promise<pages.Snippet[]> {
 
 export function loadAllMicroflows(model: IModel): When.Promise<microflows.Microflow[]> {
     return (<When.Promise<microflows.Microflow[]>>loadDocuments(model.allMicroflows(), 'microflow'));
+}
+
+export function loadAllJavaActions(model: IModel): When.Promise<javaactions.JavaAction[]> {
+    return (<When.Promise<javaactions.JavaAction[]>>loadDocuments(model.allJavaActions(), 'javaaction'));
 }
 
 export interface Logger {

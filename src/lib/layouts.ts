@@ -40,17 +40,20 @@ export function processLayouts(layouts: pages.Layout[], sheet: Sheet, moduleName
                 const classElProp = getPropertyFromStructure(structure, `class`);
                 const styleElProp = getPropertyFromStructure(structure, `style`);
                 if (nameElProp && !(structure instanceof pages.Layout)) {
-                    line.push(nameElProp.get());
-                    logger.log(`       ${logger.el('name')}:        ${nameElProp.get()}`);
+                    const name = nameElProp.get();
+                    line.push(name);
+                    logger.log(`       ${logger.el('name')}:        ${name}`);
                     logger.log(`         ${logger.el('type')}:      ${structure.structureTypeName.replace('Pages$', '')}`);
                     if (classElProp) {
-                        logger.log(`         ${logger.el('class')}:     ${classElProp.get()}`);
-                        store.addClasses(classElProp.get());
-                        line.push(classElProp.get());
+                        const className = classElProp.get();
+                        logger.log(`         ${logger.el('class')}:     ${className}`);
+                        store.addClasses(className);
+                        line.push(className);
                     }
                     if (styleElProp) {
-                        logger.log(`         ${logger.el('style')}:     ${styleElProp.get()}`);
-                        line.push(styleElProp.get());
+                        const style = styleElProp.get();
+                        logger.log(`         ${logger.el('style')}:     ${style}`);
+                        line.push(style);
                     }
 
                     if (structure instanceof pages.SnippetCallWidget) {
@@ -60,7 +63,7 @@ export function processLayouts(layouts: pages.Layout[], sheet: Sheet, moduleName
                     }
 
                     if (structure instanceof customwidgets.CustomWidget) {
-                        handleWidget(structure, logger, line, nameElProp.get(), store, `Layout:${layout.qualifiedName}`);
+                        handleWidget(structure, logger, line, name, store, `Layout:${layout.qualifiedName}`);
                     }
 
                     sheet.addLine(line);
