@@ -2,8 +2,8 @@
 require('dotenv').config();
 
 import chalk from 'chalk';
-import { ensureFile, readJSON, writeJSON } from 'fs-extra';
-import * as _ from 'lodash';
+import { ensureFile } from 'fs-extra';
+import { uniq } from 'lodash';
 import { IModel, microflows, pages } from "mendixmodelsdk";
 import { Branch, MendixSdkClient, OnlineWorkingCopy, Project, Revision } from "mendixplatformsdk";
 import Excel from './lib/excel';
@@ -13,6 +13,7 @@ import { processMicroflows } from './lib/microflows';
 import { processPagesElements } from './lib/pages';
 import { processSnippets } from './lib/snippets';
 import Store from './lib/store';
+import WorkingCopyCache from './lib/working_copy_cache';
 import util = require('util');
 
 const {
@@ -35,30 +36,6 @@ const store = new Store();
 
 const revNo = -1; // -1 for latest
 const branchName = typeof BRANCH !== 'undefined' ? BRANCH : null;
-const cacheKey = `${PROJECT_TITLE}-${PROJECT_ID}-${branchName !== null ? branchName : 'main'}`;
-
-let wc_cache:any = {} // null for mainline
-const loadWcCache = () => new Promise(async (resolve, reject) => {
-    try {
-        const cacheFile = await readJSON('./working_copy_cache.json');
-        wc_cache = cacheFile;
-        resolve(true);
-    } catch (e) {
-        console.log('No workcopy cache found');
-        resolve(false);
-    }
-});
-
-const writeWcCache = () => new Promise(async (resolve, reject) => {
-    try {
-        await writeJSON('./working_copy_cache.json', wc_cache);
-        resolve(true);
-    } catch (e) {
-        console.log('Error writing working copy cache');
-        resolve(false);
-    }
-});
-
 
 const excelFile = new Excel();
 const overviewSheet = excelFile.createSheet('overview', [
@@ -88,6 +65,8 @@ if (!PROJECT_ID || !PROJECT_TITLE) {
     process.exit(1);
 }
 
+const cacheKey = `${PROJECT_TITLE}-${PROJECT_ID}-${branchName !== null ? branchName : 'main'}`;
+const workingCopyCache = new WorkingCopyCache({ MODEL_SDK_USER, MODEL_SDK_TOKEN }, cacheKey);
 const client = new MendixSdkClient(MODEL_SDK_USER, MODEL_SDK_TOKEN);
 const project = new Project(client, PROJECT_ID, PROJECT_TITLE);
 
@@ -119,13 +98,10 @@ function getWorkingCopy(client: MendixSdkClient, id: string): Promise<IModel> {
 async function main() {
     let model:IModel;
 
-    const loadedCache = await loadWcCache();
-    if (!loadedCache) {
-        await writeWcCache();
-    }
-    const copyStr:any = wc_cache[cacheKey];
+    await workingCopyCache.init();
+    const copyStr:any = workingCopyCache.get_key();
 
-    if (typeof copyStr === 'undefined') {
+    if (copyStr === null) {
         let workingCopy:OnlineWorkingCopy;
         try {
             workingCopy = await loadWorkingCopy();
@@ -134,15 +110,12 @@ async function main() {
             console.log('Error opening model: \n', e);
             process.exit(1);
         }
-        const date = new Date();
-        wc_cache[cacheKey] = `${date.getTime()}:${workingCopy.id()}`;
-        await writeWcCache();
+        await workingCopyCache.set_key(workingCopy.id());
     } else {
         const currentDate = (new Date()).getTime();
         const minTime = currentDate - (24*60*60*1000);
 
-        const time = parseInt(copyStr.split(':')[0], 10);
-        const copyId = copyStr.split(':')[1];
+        const { time, id } = copyStr
 
         if (time < minTime) {
             let workingCopy:OnlineWorkingCopy;
@@ -153,12 +126,10 @@ async function main() {
                 console.log('Error opening model: \n', e);
                 process.exit(1);
             }
-            const date = new Date();
-            wc_cache[cacheKey] = `${date.getTime()}:${workingCopy.id()}`;
-            await writeWcCache();
+            await workingCopyCache.set_key(workingCopy.id());
         } else {
             try {
-                model = await getWorkingCopy(client, copyId); util.log(`model loaded`);
+                model = await getWorkingCopy(client, id); util.log(`model loaded`);
             } catch (e) {
                 console.log('Error opening model: \n', e);
                 process.exit(1);
@@ -215,8 +186,8 @@ async function main() {
         process.exit(1);
     }
 
-    const snippetsList = _.uniq(snippets.map(sn => sn.qualifiedName));
-    const layoutsList = _.uniq(layouts.map(lo => lo.qualifiedName));
+    const snippetsList = uniq(snippets.map(sn => sn.qualifiedName));
+    const layoutsList = uniq(layouts.map(lo => lo.qualifiedName));
 
     const unusedSnippets = snippetsList.filter(sn => !store.used('snippet', sn));
     const unusedLayouts = layoutsList.filter(lo => !store.used('layout', lo));

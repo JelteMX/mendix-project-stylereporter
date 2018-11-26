@@ -3,7 +3,7 @@ import { IStructureJSON } from "mendixmodelsdk/dist/sdk/internal/deltas";
 import { getPropertyFromStructure, Logger } from './helpers';
 import Store from "./store";
 
-function handlePropsSub(valueType:any, valueJSON: IStructureJSON, wpValue?:customwidgets.WidgetValue) {
+function handlePropsSub(valueType:any, valueJSON: IStructureJSON, wpValue?:customwidgets.WidgetValue, wpType?:customwidgets.WidgetPropertyType) {
     let propValue = null;
     if (['String', 'Integer', 'Enumeration'].indexOf(valueType.type) !== -1) {
         propValue = valueJSON.primitiveValue;
@@ -29,6 +29,8 @@ function handlePropsSub(valueType:any, valueJSON: IStructureJSON, wpValue?:custo
         }
     } else if (valueType.type === 'EntityConstraint') {
         propValue = valueJSON.xPathConstraint;
+    } else if (valueType.type === 'Image') {
+        propValue = valueJSON.image;
     } else if (valueType.type === 'Microflow') {
         propValue = valueJSON.microflow;
     } else if (valueType.type === 'TranslatableString') {
@@ -97,7 +99,7 @@ function handleWidgetProps(props: customwidgets.WidgetProperty[]):any {
         const category = <string>wpTypeJSON.category;
         const vT:any = wpTypeJSON.valueType;
 
-        const vValue = handlePropsSub(vT, wpValueJSON, wpValue);
+        const vValue = handlePropsSub(vT, wpValueJSON, wpValue, wpType);
 
         if (typeof obj[category] === 'undefined') {
             obj[category] = {};
@@ -121,12 +123,12 @@ export function createCustomWidgetObject(widgetStructure:customwidgets.CustomWid
     return widget;
 }
 
-export function handleWidget(structure: IStructure, { log, spec }: Logger, line: string[], name: string, store: Store, location: string) {
+export function handleWidget(structure: IStructure, logger: Logger, line: string[], name: string, store: Store, location: string) {
     const widgetStructure = structure as customwidgets.CustomWidget;
     const widgetJSON = widgetStructure.toJSON() as any;
     const widgetID = widgetJSON.type && widgetJSON.type.widgetId || null;
 
-    log(`         ${spec('widget')}:    ${widgetID}`);
+    logger.log(`         ${logger.spec('widget')}:    ${widgetID}`);
     line.push(widgetID);
     if (widgetID !== null) {
         const widgetObj = createCustomWidgetObject(widgetStructure, name, widgetID);

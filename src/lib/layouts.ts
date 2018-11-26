@@ -1,5 +1,5 @@
 import { customwidgets, pages } from "mendixmodelsdk";
-import { Sheet } from "../excel";
+import { Sheet } from "./excel";
 import { getPropertyFromStructure, Logger } from './helpers';
 import { handleSnippet } from "./snippets";
 import Store from './store';

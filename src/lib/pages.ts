@@ -1,15 +1,15 @@
 import { customwidgets, pages } from "mendixmodelsdk";
-import { Sheet } from "../excel";
+import { Sheet } from "./excel";
 import { getPropertyFromStructure, Logger, logSublevel } from './helpers';
 import { handleSnippet } from "./snippets";
 import Store from './store';
 import { handleWidget } from './widgets';
 
-function logTopLevel({ log, el }:Logger, page: pages.Page) {
-    log(`${el('name')}:       ${page.qualifiedName}`);
-    log(`${el('layout')}:     ${page.layoutCall.layoutQualifiedName}`);
-    log(`${el('classNames')}: ${page.class}`);
-    log(`${el('styles')}:     ${page.style}`);
+function logTopLevel(logger:Logger, page: pages.Page) {
+    logger.log(`${logger.el('name')}:       ${page.qualifiedName}`);
+    logger.log(`${logger.el('layout')}:     ${page.layoutCall.layoutQualifiedName}`);
+    logger.log(`${logger.el('classNames')}: ${page.class}`);
+    logger.log(`${logger.el('styles')}:     ${page.style}`);
 }
 
 export function processPagesElements(allPages: pages.Page[], sheet: Sheet, moduleName: string, logger: Logger, store: Store) {

@@ -47,7 +47,7 @@ The ``MODEL_SDK_TOKEN`` can be found in Sprintr, as well as the ``PROJECT_ID`` a
 
 ### Working copy
 
-The first time you run this tool, you will not have a working copy. Based on the variables as set above, it will create one. This can take up to two minutes. Once this is done, it will store the working copy id in a local `working_copy_cache.json`. This way a working copy can be reused in 24h. After the working copy is made, it will resume the rest of the script.
+The first time you run this tool, you will not have a working copy. Based on the variables as set above, it will create one. This can take up to two minutes. Once this is done, it will store the working copy id in a local `reporter-cache-XXXXXX.dat` (encrypted). This way a working copy can be reused in 24h. After the working copy is made, it will resume the rest of the script.
 
 ### Output
 

@@ -1,21 +1,21 @@
 import chalk from 'chalk';
 import { customwidgets, IStructure, pages } from "mendixmodelsdk";
-import { Sheet } from "../excel";
+import { Sheet } from "./excel";
 import { getPropertyFromStructure, Logger, logSublevel } from './helpers';
 import Store from './store';
 import { handleWidget } from './widgets';
 
-export function handleSnippet(structure: IStructure, { log, spec }: Logger, line: string[], store: Store, location: string) {
+export function handleSnippet(structure: IStructure, logger: Logger, line: string[], store: Store, location: string) {
     const snippetStructure = structure as pages.SnippetCallWidget;
     const snippetCall = getPropertyFromStructure(snippetStructure, `snippetCall`).get();
     const snippet = getPropertyFromStructure(snippetCall, 'snippet').get() as pages.ISnippet;
 
     if (snippet) {
-        log(`    ${spec('snippet')}:   ${snippet.qualifiedName}`);
+        logger.log(`    ${logger.spec('snippet')}:   ${snippet.qualifiedName}`);
         line.push(snippet.qualifiedName);
         store.addSnippet(snippet.qualifiedName, location);
     } else {
-        log(`    ${spec('snippet')}:   ${chalk.red('unknown')}`);
+        logger.log(`    ${logger.spec('snippet')}:   ${chalk.red('unknown')}`);
         line.push('-unknown-');
     }
 }

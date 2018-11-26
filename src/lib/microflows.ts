@@ -1,5 +1,5 @@
 import { microflows, pages } from "mendixmodelsdk";
-import { Sheet } from "../excel";
+import { Sheet } from "./excel";
 import { getPropertyFromStructure, Logger, getPropertyList } from './helpers';
 import Store from './store';
 
