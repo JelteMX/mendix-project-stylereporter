@@ -5,12 +5,16 @@ import { handleSnippet } from "./snippets";
 import Store from './store';
 import { handleWidget } from './widgets';
 
+function logTopLevel(logger:Logger, layout: pages.Layout) {
+    logger.log(`  ${logger.el('name')}:        ${layout.qualifiedName}`);
+    logger.log(`    ${logger.el('class')}:     ${layout.class}`);
+    logger.log(`    ${logger.el('style')}:     ${layout.style}`);
+}
+
 export function processLayouts(layouts: pages.Layout[], sheet: Sheet, moduleName: string, logger: Logger, store: Store) {
     return new Promise((resolve, reject) => {
         layouts.forEach(layout => {
-            logger.log(`  ${logger.el('name')}:        ${layout.qualifiedName}`);
-            logger.log(`    ${logger.el('class')}:     ${layout.class}`);
-            logger.log(`    ${logger.el('style')}:     ${layout.style}`);
+            logTopLevel(logger, layout);
 
             sheet.addLine([
                 'Layout',

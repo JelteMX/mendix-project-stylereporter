@@ -71,3 +71,17 @@ export class Logger {
         return chalk.magenta(...args);
     }
 }
+
+interface subLevelProps {
+    name:string
+    type:string
+    className:string
+    style:string
+}
+
+export function logSublevel(logger:Logger, {name, type, className, style}:subLevelProps) {
+    logger.log(`  ${logger.el('name')}:        ${name}`);
+    logger.log(`    ${logger.el('type')}:      ${type}`);
+    logger.log(`    ${logger.el('class')}:     ${className}`);
+    logger.log(`    ${logger.el('style')}:     ${style}`);
+}

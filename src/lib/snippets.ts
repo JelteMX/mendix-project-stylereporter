@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import { customwidgets, IStructure, pages } from "mendixmodelsdk";
 import { Sheet } from "../excel";
-import { getPropertyFromStructure, Logger } from './helpers';
+import { getPropertyFromStructure, Logger, logSublevel } from './helpers';
 import Store from './store';
 import { handleWidget } from './widgets';
 
@@ -38,13 +38,12 @@ export function processSnippets(snippets: pages.Snippet[], sheet: Sheet, moduleN
             ]);
 
             snippet.traverse(structure => {
-                let line: string[];
                 const nameProp = getPropertyFromStructure(structure, `name`);
                 const classProp = getPropertyFromStructure(structure, `class`);
                 const styleProp = getPropertyFromStructure(structure, `style`);
                 if (nameProp && classProp && !(structure instanceof pages.Page)) {
 
-                    line = [
+                    let line = [
                         'Snippet',
                         snippet.qualifiedName,
                         '',
@@ -54,10 +53,12 @@ export function processSnippets(snippets: pages.Snippet[], sheet: Sheet, moduleN
                         styleProp.get()
                     ];
 
-                    logger.log(`  ${logger.el('name')}:        ${nameProp.get()}`);
-                    logger.log(`    ${logger.el('type')}:      ${structure.structureTypeName.replace('Pages$', '')}`);
-                    logger.log(`    ${logger.el('class')}:     ${classProp.get()}`);
-                    logger.log(`    ${logger.el('style')}:     ${styleProp.get()}`);
+                    logSublevel(logger, {
+                        name: <string>nameProp.get(),
+                        type: <string>structure.structureTypeName.replace('Pages$', ''),
+                        className: <string>classProp.get(),
+                        style: <string>styleProp.get()
+                    });
 
                     store.addClasses(classProp.get());
 

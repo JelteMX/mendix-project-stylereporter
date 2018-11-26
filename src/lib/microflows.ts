@@ -16,11 +16,11 @@ export function processMicroflows(mics: microflows.Microflow[], sheet: Sheet, mo
                     const pageSettings: pages.PageSettings = getPropertyFromStructure(structure, 'pageSettings').get();
                     if (pageSettings.pageQualifiedName) {
                         if (!shown) {
-                            logger.log(`${logger.el('name')}:       ${microflow.qualifiedName}`);
+                            logger.log(`${logger.el('name')}:  ${microflow.qualifiedName}`);
                             logger.log(`${logger.el('open page actions')}:`);
                             shown = true;
                         }
-                        logger.log(`        ${pageSettings.pageQualifiedName}`);
+                        logger.log(`    ${pageSettings.pageQualifiedName}`);
                         sheet.addLine([
                             'microflow',
                             microflow.qualifiedName,

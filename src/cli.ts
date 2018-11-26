@@ -1,41 +1,48 @@
 `use strict`;
 require('dotenv').config();
 
-import { MendixSdkClient, OnlineWorkingCopy, Project, Revision, Branch, loadAsPromise } from "mendixplatformsdk";
-import { ModelSdkClient, IModel, Model, projects, domainmodels, microflows, pages, navigation, texts, security, IStructure, menus, AbstractProperty } from "mendixmodelsdk";
-
-import when = require('when');
-import util = require('util');
 import chalk from 'chalk';
+import { ensureFile, readJSON, writeJSON } from 'fs-extra';
 import * as _ from 'lodash';
-import fs = require('fs-extra');
-
+import { IModel, microflows, pages } from "mendixmodelsdk";
+import { Branch, MendixSdkClient, OnlineWorkingCopy, Project, Revision } from "mendixplatformsdk";
 import Excel from './excel';
+import { loadAllLayouts, loadAllMicroflows, loadAllPages, loadAllSnippets, Logger } from './lib/helpers';
+import { processLayouts } from './lib/layouts';
+import { processMicroflows } from './lib/microflows';
+import { processPagesElements } from './lib/pages';
+import { processSnippets } from './lib/snippets';
 import Store from './lib/store';
-import { Logger, getPropertyFromStructure, loadAllPages, loadAllSnippets, loadAllLayouts, loadAllMicroflows } from './lib/helpers';
 
-// Only edit this part!
-const projectId = process.env.PROJECT_ID;
-const projectName = process.env.PROJECT_TITLE;
-const workingCopyId = process.env.WORKING_COPY;
-const moduleName = process.env.MODULE_NAME;
-const excelFileName = typeof process.env.EXCEL_FILE !== 'undefined' ? process.env.EXCEL_FILE : '';
-const jsonFileName = typeof process.env.JSON_FILE !== 'undefined' ? process.env.JSON_FILE : '';
-const verbose = typeof process.env.VERBOSE !== 'undefined' ? process.env.VERBOSE === 'true' : false;
-const username = process.env.MODEL_SDK_USER;
-const apikey = process.env.MODEL_SDK_TOKEN;
+import util = require('util');
 
-const logger = new Logger(verbose);
+
+const {
+    PROJECT_ID,
+    PROJECT_TITLE,
+    MODULE_NAME,
+    MODEL_SDK_USER,
+    MODEL_SDK_TOKEN,
+    EXCEL_FILE,
+    JSON_FILE,
+    VERBOSE,
+    BRANCH
+} = process.env;
+
+const excelFileName =   typeof EXCEL_FILE !== 'undefined' ? EXCEL_FILE : '';
+const jsonFileName =    typeof JSON_FILE !== 'undefined' ? JSON_FILE : '';
+
+const logger = new Logger(typeof VERBOSE !== 'undefined' ? VERBOSE === 'true' : false);
 const store = new Store();
 
 const revNo = -1; // -1 for latest
-const branchName = typeof process.env.BRANCH !== 'undefined' ? process.env.BRANCH : null;
-const cacheKey = `${projectName}-${projectId}-${branchName !== null ? branchName : 'main'}`;
+const branchName = typeof BRANCH !== 'undefined' ? BRANCH : null;
+const cacheKey = `${PROJECT_TITLE}-${PROJECT_ID}-${branchName !== null ? branchName : 'main'}`;
 let wc_cache:any = {} // null for mainline
 
 const loadWcCache = () => new Promise(async (resolve, reject) => {
     try {
-        const cacheFile = await fs.readJSON('./working_copy_cache.json');
+        const cacheFile = await readJSON('./working_copy_cache.json');
         wc_cache = cacheFile;
         resolve(true);
     } catch (e) {
@@ -46,7 +53,7 @@ const loadWcCache = () => new Promise(async (resolve, reject) => {
 
 const writeWcCache = () => new Promise(async (resolve, reject) => {
     try {
-        await fs.writeJSON('./working_copy_cache.json', wc_cache);
+        await writeJSON('./working_copy_cache.json', wc_cache);
         resolve(true);
     } catch (e) {
         console.log('Error writing working copy cache');
@@ -54,12 +61,6 @@ const writeWcCache = () => new Promise(async (resolve, reject) => {
     }
 });
 
-import { processPagesElements } from './lib/pages';
-import { processSnippets } from './lib/snippets';
-import { processLayouts } from './lib/layouts';
-import { processMicroflows } from './lib/microflows';
-import { allowStateChanges } from "mobx/lib/internal";
-import { exists } from "fs-extra";
 
 const excelFile = new Excel();
 const overviewSheet = excelFile.createSheet('overview', [
@@ -80,17 +81,17 @@ const microflowSheet = excelFile.createSheet('microflows', [
     'Open page action'
 ]);
 
-if (!username || !apikey) {
+if (!MODEL_SDK_USER || !MODEL_SDK_TOKEN) {
     console.error(`Make sure you have set ${chalk.cyan('MODEL_SDK_USER')} and ${chalk.cyan('MODEL_SDK_TOKEN')}`)
 }
 
-if (!workingCopyId && (!projectId || !projectName)) {
-    console.error(`You have not provided a ${chalk.cyan('WORKING_COPY')}, so we need get a new one. Please make sure the following
-things are set: ${chalk.cyan('PROJECT_ID')}, ${chalk.cyan('PROJECT_TITLE')}`);
+if (!PROJECT_ID || !PROJECT_TITLE) {
+    console.error(`Please make sure the following things are set: ${chalk.cyan('PROJECT_ID')}, ${chalk.cyan('PROJECT_TITLE')}`);
+    process.exit(1);
 }
 
-const client = new MendixSdkClient(username, apikey);
-const project = new Project(client, projectId, projectName);
+const client = new MendixSdkClient(MODEL_SDK_USER, MODEL_SDK_TOKEN);
+const project = new Project(client, PROJECT_ID, PROJECT_TITLE);
 
 function loadWorkingCopy():Promise<OnlineWorkingCopy> {
     return new Promise((resolve, reject) => {
@@ -171,7 +172,7 @@ async function main() {
         pages = await loadAllPages(model);
         util.log(`pages loaded`);
         logger.log(`=====================[ PAGES ]========================\n`);
-        await processPagesElements(pages, overviewSheet, moduleName, logger, store);
+        await processPagesElements(pages, overviewSheet, MODULE_NAME, logger, store);
     } catch (error) {
         console.log('Error loading pages', error);
         process.exit(1);
@@ -182,7 +183,7 @@ async function main() {
         snippets = await loadAllSnippets(model);
         util.log(`snippets loaded`);
         logger.log(`\n=====================[ SNIPPETS ]========================\n`);
-        await processSnippets(snippets, overviewSheet, moduleName, logger, store);
+        await processSnippets(snippets, overviewSheet, MODULE_NAME, logger, store);
     } catch (error) {
         console.log('Error loading snippets', error);
         process.exit(1);
@@ -193,7 +194,7 @@ async function main() {
         layouts = await loadAllLayouts(model);
         util.log(`layouts loaded`);
         logger.log(`\n=====================[ LAYOUTS ]========================\n`);
-        await processLayouts(layouts, overviewSheet, moduleName, logger, store);
+        await processLayouts(layouts, overviewSheet, MODULE_NAME, logger, store);
     } catch (error) {
         console.log('Error loading layouts', error);
         process.exit(1);
@@ -204,7 +205,7 @@ async function main() {
         microflows = await loadAllMicroflows(model);
         util.log(`microflows loaded`);
         logger.log(`=====================[ MICROFLOWS ]========================\n`);
-        await processMicroflows(microflows, microflowSheet, moduleName, logger, store);
+        await processMicroflows(microflows, microflowSheet, MODULE_NAME, logger, store);
     } catch (e) {
         console.log('Error loading microflows', e);
         process.exit(1);
@@ -221,7 +222,7 @@ async function main() {
 
     if (excelFileName !== '') {
         try {
-            await fs.ensureFile(excelFileName);
+            await ensureFile(excelFileName);
         } catch (e) {
             console.log(`Error with storing file at ${excelFileName}:`, e);
             process.exit(1);
@@ -231,7 +232,7 @@ async function main() {
     }
     if (jsonFileName !== '') {
         try {
-            await fs.ensureFile(jsonFileName);
+            await ensureFile(jsonFileName);
         } catch (e) {
             console.log(`Error with storing file at ${jsonFileName}:`, e);
             process.exit(1);

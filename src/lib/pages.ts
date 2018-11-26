@@ -1,9 +1,16 @@
 import { customwidgets, pages } from "mendixmodelsdk";
 import { Sheet } from "../excel";
-import { getPropertyFromStructure, Logger } from './helpers';
+import { getPropertyFromStructure, Logger, logSublevel } from './helpers';
 import { handleSnippet } from "./snippets";
 import Store from './store';
 import { handleWidget } from './widgets';
+
+function logTopLevel(logger:Logger, page: pages.Page) {
+    logger.log(`${logger.el('name')}:       ${page.qualifiedName}`);
+    logger.log(`${logger.el('layout')}:     ${page.layoutCall.layoutQualifiedName}`);
+    logger.log(`${logger.el('classNames')}: ${page.class}`);
+    logger.log(`${logger.el('styles')}:     ${page.style}`);
+}
 
 export function processPagesElements(allPages: pages.Page[], sheet: Sheet, moduleName: string, logger: Logger, store: Store) {
     return new Promise((resolve, reject) => {
@@ -11,10 +18,7 @@ export function processPagesElements(allPages: pages.Page[], sheet: Sheet, modul
             if (moduleName !== '' && page.qualifiedName.indexOf(moduleName) !== 0) {
                 return;
             }
-            logger.log(`${logger.el('name')}:       ${page.qualifiedName}`);
-            logger.log(`${logger.el('layout')}:     ${page.layoutCall.layoutQualifiedName}`);
-            logger.log(`${logger.el('classNames')}: ${page.class}`);
-            logger.log(`${logger.el('styles')}:     ${page.style}`);
+            logTopLevel(logger, page);
 
             sheet.addLine([
                 'Page',
@@ -31,19 +35,20 @@ export function processPagesElements(allPages: pages.Page[], sheet: Sheet, modul
 
             logger.log(`${logger.el('elements')}:`);
             page.traverse(structure => {
-                let line: string[];
                 const nameProp = getPropertyFromStructure(structure, `name`);
                 const classProp = getPropertyFromStructure(structure, `class`);
                 const styleProp = getPropertyFromStructure(structure, `style`);
                 if (nameProp && classProp && !(structure instanceof pages.Page)) {
-                    logger.log(`  ${logger.el('name')}:        ${nameProp.get()}`);
-                    logger.log(`    ${logger.el('type')}:      ${structure.structureTypeName.replace('Pages$', '')}`);
-                    logger.log(`    ${logger.el('class')}:     ${classProp.get()}`);
-                    logger.log(`    ${logger.el('style')}:     ${styleProp.get()}`);
+                    logSublevel(logger, {
+                        name: <string>nameProp.get(),
+                        type: <string>structure.structureTypeName.replace('Pages$', ''),
+                        className: <string>classProp.get(),
+                        style: <string>styleProp.get()
+                    });
 
                     store.addClasses(classProp.get());
 
-                    line = [
+                    let line = [
                         'Page',
                         page.qualifiedName,
                         '',
