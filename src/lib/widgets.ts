@@ -1,6 +1,7 @@
 import { ModelSdkClient, IModel, Model, projects, domainmodels, microflows, pages, customwidgets, navigation, texts, security, IStructure, menus, AbstractProperty } from "mendixmodelsdk";
 import { getPropertyFromStructure, Logger, getPropertyList, getPropertyListValues } from './helpers';
 import { IStructureJSON } from "mendixmodelsdk/dist/sdk/internal/deltas";
+import Store from "./store";
 
 function handleWidgetProps(props: customwidgets.WidgetProperty[]):any {
     const obj = {};
@@ -157,4 +158,17 @@ export function createCustomWidgetObject(widgetStructure:customwidgets.CustomWid
         properties: handleWidgetProps(widgetObjectProps)
     };
     return widget;
+}
+
+export function handleWidget(structure: IStructure, logger: Logger, line: string[], name: string, store: Store, location: string) {
+    const widgetStructure = structure as customwidgets.CustomWidget;
+    const widgetJSON = widgetStructure.toJSON() as any;
+    const widgetID = widgetJSON.type && widgetJSON.type.widgetId || null;
+
+    logger.log(`         ${logger.spec('widget')}:    ${widgetID}`);
+    line.push(widgetID);
+    if (widgetID !== null) {
+        const widgetObj = createCustomWidgetObject(widgetStructure, name, widgetID);
+        store.addWidget(widgetID, location, widgetObj);
+    }
 }

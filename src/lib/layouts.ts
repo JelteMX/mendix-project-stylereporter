@@ -8,7 +8,8 @@ import util = require('util');
 import chalk from 'chalk';
 
 import { getPropertyFromStructure, getPropertyList, Logger } from './helpers';
-import { createCustomWidgetObject} from './widgets';
+import { createCustomWidgetObject, handleWidget} from './widgets';
+import { handleSnippet } from "./snippets";
 
 export function processLayouts(layouts: pages.Layout[], sheet: Sheet, moduleName: string, logger: Logger, store: Store) {
     return new Promise((resolve, reject) => {
@@ -55,31 +56,13 @@ export function processLayouts(layouts: pages.Layout[], sheet: Sheet, moduleName
                     }
 
                     if (structure instanceof pages.SnippetCallWidget) {
-                        const snippetStructure = structure as pages.SnippetCallWidget;
-                        const snippetCall = getPropertyFromStructure(snippetStructure, `snippetCall`).get();
-                        const snippet = getPropertyFromStructure(snippetCall, 'snippet').get() as pages.ISnippet;
-                        if (snippet) {
-                            logger.log(`    ${logger.spec('snippet')}:   ${snippet.qualifiedName}`);
-                            line.push(snippet.qualifiedName);
-                            store.addSnippet(snippet.qualifiedName, `Layout:${layout.qualifiedName}`);
-                        } else {
-                            logger.log(`    ${logger.spec('snippet')}:   ${chalk.red('unknown')}`);
-                            line.push('-unknown-');
-                        }
+                        handleSnippet(structure, logger, line, store, `Layout:${layout.qualifiedName}`);
                     } else {
                         line.push('');
                     }
 
                     if (structure instanceof customwidgets.CustomWidget) {
-                        const widgetStructure = structure as customwidgets.CustomWidget;
-                        const widgetJSON = widgetStructure.toJSON() as any;
-                        const widgetID = widgetJSON.type && widgetJSON.type.widgetId || null;
-                        logger.log(`         ${logger.spec('widget')}:    ${widgetID}`);
-                        line.push(widgetID);
-                        if (widgetID !== null) {
-                            const widgetObj = createCustomWidgetObject(widgetStructure, nameElProp.get(), widgetID);
-                            store.addWidget(widgetID, `Layout:${layout.qualifiedName}`, widgetObj);
-                        }
+                        handleWidget(structure, logger, line, nameElProp.get(), store, `Layout:${layout.qualifiedName}`);
                     }
 
                     sheet.addLine(line);

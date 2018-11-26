@@ -8,7 +8,22 @@ import util = require('util');
 import chalk from 'chalk';
 
 import { getPropertyFromStructure, Logger, getPropertyList } from './helpers';
-import { createCustomWidgetObject} from './widgets';
+import { createCustomWidgetObject, handleWidget} from './widgets';
+
+export function handleSnippet(structure: IStructure, logger: Logger, line: string[], store: Store, location: string) {
+    const snippetStructure = structure as pages.SnippetCallWidget;
+    const snippetCall = getPropertyFromStructure(snippetStructure, `snippetCall`).get();
+    const snippet = getPropertyFromStructure(snippetCall, 'snippet').get() as pages.ISnippet;
+
+    if (snippet) {
+        logger.log(`    ${logger.spec('snippet')}:   ${snippet.qualifiedName}`);
+        line.push(snippet.qualifiedName);
+        store.addSnippet(snippet.qualifiedName, location);
+    } else {
+        logger.log(`    ${logger.spec('snippet')}:   ${chalk.red('unknown')}`);
+        line.push('-unknown-');
+    }
+}
 
 export function processSnippets(snippets: pages.Snippet[], sheet: Sheet, moduleName: string, logger: Logger, store: Store) {
     return new Promise((resolve, reject) => {
@@ -52,31 +67,13 @@ export function processSnippets(snippets: pages.Snippet[], sheet: Sheet, moduleN
                     store.addClasses(classProp.get());
 
                     if (structure instanceof pages.SnippetCallWidget) {
-                        const snippetStructure = structure as pages.SnippetCallWidget;
-                        const snippetCall = getPropertyFromStructure(snippetStructure, `snippetCall`).get();
-                        const subsnippet = getPropertyFromStructure(snippetCall, 'snippet').get() as pages.ISnippet;
-                        if (subsnippet) {
-                            logger.log(`    ${logger.spec('snippet')}:   ${subsnippet.qualifiedName}`);
-                            line.push(subsnippet.qualifiedName);
-                            store.addSnippet(subsnippet.qualifiedName, `Snippet:${snippet.qualifiedName}`);
-                        } else {
-                            logger.log(`    ${logger.spec('snippet')}:   ${chalk.red('unknown')}`);
-                            line.push('-unknown-');
-                        }
+                        handleSnippet(structure, logger, line, store, `Snippet:${snippet.qualifiedName}`);
                     } else {
                         line.push('');
                     }
 
                     if (structure instanceof customwidgets.CustomWidget) {
-                        const widgetStructure = structure as customwidgets.CustomWidget;
-                        const widgetJSON = widgetStructure.toJSON() as any;
-                        const widgetID = widgetJSON.type && widgetJSON.type.widgetId || null;
-                        logger.log(`    ${logger.spec('widget')}:    ${widgetID}`);
-                        line.push(widgetID);
-                        if (widgetID !== null) {
-                            const widgetObj = createCustomWidgetObject(widgetStructure, nameProp.get(), widgetID);
-                            store.addWidget(widgetID, `Snippet:${snippet.qualifiedName}`, widgetObj);
-                        }
+                        handleWidget(structure, logger, line, nameProp.get(), store, `Snippet:${snippet.qualifiedName}`);
                     }
 
                     sheet.addLine(line);

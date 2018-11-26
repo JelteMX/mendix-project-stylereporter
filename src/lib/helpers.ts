@@ -4,13 +4,13 @@ import chalk from 'chalk';
 import when = require('when');
 
 export function getPropertyFromStructure(structure: IStructure , propName: string): AbstractProperty<any, any> {
-    const r = structure.allProperties().filter(prop => prop.name && prop.name === propName);
-    return r ? r[0] : null;
+    const properties = structure.allProperties().filter(prop => prop.name && prop.name === propName);
+    return properties ? properties[0] : null;
 }
 
 export function getPropertyListValues(structure: IStructure, props: string[]): AbstractProperty<any, any>[] {
-    const r = structure.allProperties().filter(prop => prop.name && props.indexOf(prop.name) !== -1);
-    return r || [];
+    const properties = structure.allProperties().filter(prop => prop.name && props.indexOf(prop.name) !== -1);
+    return properties || [];
 }
 
 export function getPropertyList(structure: IStructure) {
@@ -21,11 +21,11 @@ function loadDocuments(all: any[], identifier?: string): When.Promise<any> {
     let loaded = 0;
     console.log(`Loading ${all.length} ${identifier}s`);
     return when
-        .all(all.map(form => new Promise((resolve, reject) => {
+        .all(all.map(document => new Promise((resolve, reject) => {
             try {
-                form.load(el => {
+                document.load(loadedDoc => {
                     console.log(`Loaded ${loaded++}/${all.length} ${identifier}s`);
-                    resolve(el);
+                    resolve(loadedDoc);
                 });
             } catch (e) {
                 console.log(`Error loading ${identifier}`, e)
@@ -62,10 +62,6 @@ export class Logger {
         if (this.verbose) {
             console.log.apply(console, args);
         }
-    }
-
-    padLog(padding: number = 0, str: string) {
-
     }
 
     el(...args: string[]) {
