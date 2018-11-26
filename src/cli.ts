@@ -40,6 +40,7 @@ const branchName = typeof BRANCH !== 'undefined' ? BRANCH : null;
 const excelFile = new Excel();
 const overviewSheet = excelFile.createSheet('overview', [
     'Location Type',
+    'Excluded',
     'Location Name',
     'Layout',
     'Element Type',
@@ -51,9 +52,11 @@ const overviewSheet = excelFile.createSheet('overview', [
 ]);
 
 const microflowSheet = excelFile.createSheet('microflows', [
-    'Type',
+    'Excluded',
     'Name',
-    'Open page action'
+    'Open page',
+    'Call microflow',
+    'Java Action'
 ]);
 
 if (!MODEL_SDK_USER || !MODEL_SDK_TOKEN) {

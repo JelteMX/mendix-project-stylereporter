@@ -18,6 +18,7 @@ export function processLayouts(layouts: pages.Layout[], sheet: Sheet, moduleName
 
             sheet.addLine([
                 'Layout',
+                layout.excluded ? 'true' : 'false',
                 layout.qualifiedName,
                 '',
                 '---',
@@ -32,9 +33,10 @@ export function processLayouts(layouts: pages.Layout[], sheet: Sheet, moduleName
             layout.traverse(structure => {
                 let line = [
                     'Layout',
+                    layout.excluded ? 'true' : 'false',
                     layout.qualifiedName,
                     '',
-                    structure.structureTypeName.replace('Pages$', '')
+                    structure.structureTypeName.replace('Pages$', '').replace('CustomWidgets$', '')
                 ];
                 const nameElProp = getPropertyFromStructure(structure, `name`);
                 const classElProp = getPropertyFromStructure(structure, `class`);

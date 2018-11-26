@@ -22,6 +22,7 @@ export function processPagesElements(allPages: pages.Page[], sheet: Sheet, modul
 
             sheet.addLine([
                 'Page',
+                page.excluded ? 'true' : 'false',
                 page.qualifiedName,
                 page.layoutCall.layoutQualifiedName,
                 '---',
@@ -50,9 +51,10 @@ export function processPagesElements(allPages: pages.Page[], sheet: Sheet, modul
 
                     let line = [
                         'Page',
+                        page.excluded ? 'true' : 'false',
                         page.qualifiedName,
                         '',
-                        structure.structureTypeName.replace('Pages$', ''),
+                        structure.structureTypeName.replace('Pages$', '').replace('CustomWidgets$', ''),
                         nameProp.get(),
                         classProp.get(),
                         styleProp.get()

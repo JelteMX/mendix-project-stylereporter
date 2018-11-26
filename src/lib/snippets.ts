@@ -7,13 +7,28 @@ import { handleWidget } from './widgets';
 
 export function handleSnippet(structure: IStructure, logger: Logger, line: string[], store: Store, location: string) {
     const snippetStructure = structure as pages.SnippetCallWidget;
-    const snippetCall = getPropertyFromStructure(snippetStructure, `snippetCall`).get();
-    const snippet = getPropertyFromStructure(snippetCall, 'snippet').get() as pages.ISnippet;
+    const snippetCall = snippetStructure.snippetCall;
+    const snippet = snippetCall instanceof pages.SnippetCall ? snippetCall.snippet : false;
 
-    if (snippet) {
+    if (snippet instanceof pages.Snippet) {
         logger.log(`    ${logger.spec('snippet')}:   ${snippet.qualifiedName}`);
         line.push(snippet.qualifiedName);
         store.addSnippet(snippet.qualifiedName, location);
+    } else if (snippet === null) {
+        const aPArray = snippetCall.allProperties().filter(aP => aP.name === 'snippet');
+        let val = '';
+        if (aPArray.length === 1) {
+            const sn = aPArray[0];
+            val = sn.observableValue && sn.observableValue.value || false;
+        }
+        if (val !== '') {
+            logger.log(`    ${logger.spec('snippet')}:   ${val}`);
+            line.push(val);
+            store.addSnippet(val, location);
+        } else {
+            logger.log(`    ${logger.spec('snippet')}:   ${chalk.red('unknown')}`);
+            line.push('-unknown-');
+        }
     } else {
         logger.log(`    ${logger.spec('snippet')}:   ${chalk.red('unknown')}`);
         line.push('-unknown-');
@@ -31,6 +46,7 @@ export function processSnippets(snippets: pages.Snippet[], sheet: Sheet, moduleN
 
             sheet.addLine([
                 'Snippet',
+                snippet.excluded ? 'true' : 'false',
                 snippet.qualifiedName,
                 '',
                 '---',
@@ -45,9 +61,10 @@ export function processSnippets(snippets: pages.Snippet[], sheet: Sheet, moduleN
 
                     let line = [
                         'Snippet',
+                        snippet.excluded ? 'true' : 'false',
                         snippet.qualifiedName,
                         '',
-                        structure.structureTypeName.replace('Pages$', ''),
+                        structure.structureTypeName.replace('Pages$', '').replace('CustomWidgets$', ''),
                         nameProp.get(),
                         classProp.get(),
                         styleProp.get()
