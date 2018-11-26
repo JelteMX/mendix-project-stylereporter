@@ -3,6 +3,88 @@ import { getPropertyFromStructure, Logger, getPropertyList, getPropertyListValue
 import { IStructureJSON } from "mendixmodelsdk/dist/sdk/internal/deltas";
 import Store from "./store";
 
+function handlePropsSub(valueType:any, valueJSON: IStructureJSON, wpValue?:customwidgets.WidgetValue) {
+    let propValue = null;
+    if (['String', 'Integer', 'Enumeration'].indexOf(valueType.type) !== -1) {
+        propValue = valueJSON.primitiveValue;
+    } else if (valueType.type === 'Boolean') {
+        propValue = valueJSON.primitiveValue === 'true';
+    } else if (valueType.type === 'Entity') {
+        if (typeof valueJSON.entityPath !== 'undefined') {
+            propValue = valueJSON.entityPath;
+        } else if (typeof valueJSON.entityRef !== 'undefined') {
+            if (null === valueJSON.entityRef) {
+                propValue = null;
+            } else if (typeof valueJSON.entityRef['steps'] !== 'undefined') {
+                propValue =  valueJSON.entityRef['steps'].map(tr => {
+                    return {
+                        'association': tr.association,
+                        'destinationEntity': tr.destinationEntity
+                    };
+                });
+            }
+        } else {
+            propValue = 'Unknown, check output';
+            console.log(valueJSON);
+        }
+    } else if (valueType.type === 'EntityConstraint') {
+        propValue = valueJSON.xPathConstraint;
+    } else if (valueType.type === 'Microflow') {
+        propValue = valueJSON.microflow;
+    } else if (valueType.type === 'TranslatableString') {
+        propValue = valueJSON.translatableValue['translations'].map(tr => {
+            return {
+                'language': tr.languageCode,
+                'text': tr.text
+            };
+        });
+    } else if (valueType.type === 'Attribute') {
+        if (typeof valueJSON.attributePath !== 'undefined') {
+            propValue = valueJSON.attributePath;
+        } else if (typeof valueJSON.attributeRef !== 'undefined') {
+            if (null === valueJSON.attributeRef) {
+                propValue = null;
+            } else if (typeof valueJSON.attributeRef['attribute'] !== 'undefined') {
+                propValue = valueJSON.attributeRef['attribute'];
+            }
+        } else {
+            propValue = 'Unknown, check output';
+            console.log(valueJSON);
+        }
+    } else if (valueType.type === 'Object' && wpValue) {
+        propValue = [];
+        const objects = getPropertyFromStructure(wpValue, 'objects').get();
+        const widgetPropertiesList:any[] = objects.map(o => getPropertyFromStructure(o, 'properties').get());
+        widgetPropertiesList.forEach(wPListItem => {
+            let propObj = {};
+            wPListItem.forEach(wPListSubItem => {
+                const wpTypeSubJSON = wPListSubItem.type.toJSON();
+                const wpValueSubJSON = wPListSubItem.value.toJSON();
+
+                const subkey = <string>wpTypeSubJSON.key;
+                const subcategory = <string>wpTypeSubJSON.category;
+                const subvT:any = wpTypeSubJSON.valueType;
+
+                const subValue = handlePropsSub(subvT, wpValueSubJSON);
+
+                if (typeof propObj[subcategory] === 'undefined') {
+                    propObj[subcategory] = {};
+                } else {
+                }
+
+                propObj[subcategory][subkey] = {
+                    'type': subvT.type,
+                    'value': subValue
+                };
+            });
+            propValue.push(propObj);
+        })
+    } else {
+        console.log(valueType.type, valueJSON);
+    }
+    return propValue;
+}
+
 function handleWidgetProps(props: customwidgets.WidgetProperty[]):any {
     const obj = {};
     props.forEach(wp => {
@@ -14,129 +96,8 @@ function handleWidgetProps(props: customwidgets.WidgetProperty[]):any {
         const key = <string>wpTypeJSON.key;
         const category = <string>wpTypeJSON.category;
         const vT:any = wpTypeJSON.valueType;
-        let vValue = null;
-        if (['String', 'Integer', 'Enumeration'].indexOf(vT.type) !== -1) {
-            vValue = wpValueJSON.primitiveValue;
-        } else if (vT.type === 'Boolean') {
-            vValue = wpValueJSON.primitiveValue === 'true';
-        } else if (vT.type === 'Entity') {
-            if (typeof wpValueJSON.entityPath !== 'undefined') {
-                vValue = wpValueJSON.entityPath;
-            } else if (typeof wpValueJSON.entityRef !== 'undefined') {
-                if (null === wpValueJSON.entityRef) {
-                    vValue = null;
-                } else if (typeof wpValueJSON.entityRef['steps'] !== 'undefined') {
-                    vValue =  wpValueJSON.entityRef['steps'].map(tr => {
-                        return {
-                            'association': tr.association,
-                            'destinationEntity': tr.destinationEntity
-                        };
-                    });
-                }
-            } else {
-                vValue = 'Unknown, check output';
-                console.log(wpValueJSON);
-            }
-        } else if (vT.type === 'EntityConstraint') {
-            vValue = wpValueJSON.xPathConstraint;
-        } else if (vT.type === 'Microflow') {
-            vValue = wpValueJSON.microflow;
-        } else if (vT.type === 'TranslatableString') {
-            vValue = wpValueJSON.translatableValue['translations'].map(tr => {
-                return {
-                    'language': tr.languageCode,
-                    'text': tr.text
-                };
-            });
-        } else if (vT.type === 'Attribute') {
-            if (typeof wpValueJSON.attributePath !== 'undefined') {
-                vValue = wpValueJSON.attributePath;
-            } else if (typeof wpValueJSON.attributeRef !== 'undefined') {
-                if (null === wpValueJSON.attributeRef) {
-                    vValue = null;
-                } else if (typeof wpValueJSON.attributeRef['attribute'] !== 'undefined') {
-                    vValue = wpValueJSON.attributeRef['attribute'];
-                }
-            } else {
-                vValue = 'Unknown, check output';
-                console.log(wpValueJSON);
-            }
-        } else if (vT.type === 'Object') {
-            vValue = [];
-            const objects = getPropertyFromStructure(wpValue, 'objects').get();
-            const widgetPropertiesList:any[] = objects.map(o => getPropertyFromStructure(o, 'properties').get());
-            widgetPropertiesList.forEach(wPListItem => {
-                let propObj = {};
-                wPListItem.forEach(wPListSubItem => {
-                    const wpTypeSubJSON = wPListSubItem.type.toJSON();
-                    const wpValueSubJSON = wPListSubItem.value.toJSON();
 
-                    const subkey = <string>wpTypeSubJSON.key;
-                    const subcategory = <string>wpTypeSubJSON.category;
-                    const subvT:any = wpTypeSubJSON.valueType;
-                    let subValue = null;
-                    if (['String', 'Integer', 'Enumeration'].indexOf(subvT.type) !== -1) {
-                        subValue = wpValueSubJSON.primitiveValue;
-                    } else if (subvT.type === 'Boolean') {
-                        subValue = wpValueSubJSON.primitiveValue === 'true';
-                    } else if (subvT.type === 'Entity') {
-                        if (typeof wpValueSubJSON.entityPath !== 'undefined') {
-                            subValue = wpValueSubJSON.entityPath;
-                        } else if (typeof wpValueSubJSON.entityRef !== 'undefined') {
-                            if (null === wpValueSubJSON.entityRef) {
-                                subValue = null;
-                            } else if (typeof wpValueSubJSON.entityRef['steps'] !== 'undefined') {
-                                subValue = wpValueSubJSON.entityRef['steps'].map(tr => {
-                                    return {
-                                        'association': tr.association,
-                                        'destinationEntity': tr.destinationEntity
-                                    };
-                                });
-                            }
-                        } else {
-                            subValue = 'Unknown, check output';
-                            console.log(wpValueSubJSON);
-                        }
-                    } else if (subvT.type === 'EntityConstraint') {
-                        subValue = wpValueSubJSON.xPathConstraint;
-                    } else if (subvT.type === 'Microflow') {
-                        subValue = wpValueSubJSON.microflow;
-                    } else if (vT.type === 'TranslatableString') {
-                        subValue = wpValueSubJSON.translatableValue['translations'].map(tr => {
-                            return {
-                                'language': tr.languageCode,
-                                'text': tr.text
-                            };
-                        });
-                    } else if (subvT.type === 'Attribute') {
-                        if (typeof wpValueSubJSON.attributePath !== 'undefined') {
-                            subValue = wpValueSubJSON.attributePath;
-                        } else if (typeof wpValueSubJSON.attributeRef !== 'undefined') {
-                            if (null === wpValueSubJSON.attributeRef) {
-                                subValue = null;
-                            } else if (typeof wpValueSubJSON.attributeRef['attribute'] !== 'undefined') {
-                                subValue = wpValueSubJSON.attributeRef['attribute'];
-                            }
-                        } else {
-                            subValue = 'Unknown, check output';
-                        }
-                    }
-
-                    if (typeof propObj[subcategory] === 'undefined') {
-                        propObj[subcategory] = {};
-                    } else {
-                    }
-
-                    propObj[subcategory][subkey] = {
-                        'type': subvT.type,
-                        'value': subValue
-                    };
-                });
-                vValue.push(propObj);
-            })
-        } else {
-            console.log(vT.type, wpValueJSON);
-        }
+        const vValue = handlePropsSub(vT, wpValueJSON, wpValue);
 
         if (typeof obj[category] === 'undefined') {
             obj[category] = {};
