@@ -17,12 +17,14 @@ export class Book {
 
 export interface Sheet {
     title: string;
+    columnWidth: number;
     data: string[][];
 }
 
 export class Sheet {
     constructor(title: string, headers: string[]) {
         this.title = title;
+        this.columnWidth = headers.length;
         this.data = [];
         this.addLine(headers);
     }
@@ -52,7 +54,9 @@ class Writer {
     writeFile(filename) {
         this.sheets.forEach(sheet => {
             this.wb.SheetNames.push(sheet.title);
-            this.wb.Sheets[sheet.title] = XLSX.utils.aoa_to_sheet(sheet.data);
+            const worksheet = XLSX.utils.aoa_to_sheet(sheet.data);
+            worksheet["!autofilter"] = { ref:'A1:Z1' };
+            this.wb.Sheets[sheet.title] = worksheet;
         });
 
         XLSX.writeFile(this.wb, filename, { bookSST: true });
