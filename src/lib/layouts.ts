@@ -1,15 +1,9 @@
-import { MendixSdkClient, OnlineWorkingCopy, Project, Revision, Branch, loadAsPromise } from "mendixplatformsdk";
-import { ModelSdkClient, IModel, Model, projects, domainmodels, microflows, pages, navigation, customwidgets, texts, security, IStructure, menus, AbstractProperty } from "mendixmodelsdk";
-
-import when = require('when');
+import { customwidgets, pages } from "mendixmodelsdk";
 import { Sheet } from "../excel";
-import Store from './store';
-import util = require('util');
-import chalk from 'chalk';
-
-import { getPropertyFromStructure, getPropertyList, Logger } from './helpers';
-import { createCustomWidgetObject, handleWidget} from './widgets';
+import { getPropertyFromStructure, Logger } from './helpers';
 import { handleSnippet } from "./snippets";
+import Store from './store';
+import { handleWidget } from './widgets';
 
 export function processLayouts(layouts: pages.Layout[], sheet: Sheet, moduleName: string, logger: Logger, store: Store) {
     return new Promise((resolve, reject) => {

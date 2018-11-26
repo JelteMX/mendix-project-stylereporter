@@ -1,13 +1,7 @@
-import { MendixSdkClient, OnlineWorkingCopy, Project, Revision, Branch, loadAsPromise } from "mendixplatformsdk";
-import { ModelSdkClient, IModel, Model, projects, domainmodels, customwidgets, microflows, pages, navigation, texts, security, IStructure, menus, AbstractProperty } from "mendixmodelsdk";
-
-import when = require('when');
+import { microflows, pages } from "mendixmodelsdk";
 import { Sheet } from "../excel";
+import { getPropertyFromStructure, Logger } from './helpers';
 import Store from './store';
-import util = require('util');
-import chalk from 'chalk';
-
-import { getPropertyFromStructure, Logger, getPropertyList } from './helpers';
 
 export function processMicroflows(mics: microflows.Microflow[], sheet: Sheet, moduleName: string, logger: Logger, store: Store) {
     return new Promise((resolve, reject) => {

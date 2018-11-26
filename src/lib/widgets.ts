@@ -1,6 +1,6 @@
-import { ModelSdkClient, IModel, Model, projects, domainmodels, microflows, pages, customwidgets, navigation, texts, security, IStructure, menus, AbstractProperty } from "mendixmodelsdk";
-import { getPropertyFromStructure, Logger, getPropertyList, getPropertyListValues } from './helpers';
+import { customwidgets, IStructure } from "mendixmodelsdk";
 import { IStructureJSON } from "mendixmodelsdk/dist/sdk/internal/deltas";
+import { getPropertyFromStructure, Logger } from './helpers';
 import Store from "./store";
 
 function handlePropsSub(valueType:any, valueJSON: IStructureJSON, wpValue?:customwidgets.WidgetValue) {

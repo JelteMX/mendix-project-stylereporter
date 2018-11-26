@@ -1,14 +1,9 @@
-import { MendixSdkClient, OnlineWorkingCopy, Project, Revision, Branch, loadAsPromise } from "mendixplatformsdk";
-import { ModelSdkClient, IModel, Model, projects, domainmodels, customwidgets, microflows, pages, navigation, texts, security, IStructure, menus, AbstractProperty } from "mendixmodelsdk";
-
-import when = require('when');
-import { Sheet } from "../excel";
-import Store from './store';
-import util = require('util');
 import chalk from 'chalk';
-
-import { getPropertyFromStructure, Logger, getPropertyList } from './helpers';
-import { createCustomWidgetObject, handleWidget} from './widgets';
+import { customwidgets, IStructure, pages } from "mendixmodelsdk";
+import { Sheet } from "../excel";
+import { getPropertyFromStructure, Logger } from './helpers';
+import Store from './store';
+import { handleWidget } from './widgets';
 
 export function handleSnippet(structure: IStructure, logger: Logger, line: string[], store: Store, location: string) {
     const snippetStructure = structure as pages.SnippetCallWidget;

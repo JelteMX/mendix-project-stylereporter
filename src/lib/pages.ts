@@ -1,15 +1,9 @@
-import { MendixSdkClient, OnlineWorkingCopy, Project, Revision, Branch, loadAsPromise } from "mendixplatformsdk";
-import { ModelSdkClient, IModel, Model, projects, domainmodels, microflows, pages, customwidgets, navigation, texts, security, IStructure, menus, AbstractProperty } from "mendixmodelsdk";
-
-import when = require('when');
+import { customwidgets, pages } from "mendixmodelsdk";
 import { Sheet } from "../excel";
-import Store from './store';
-import util = require('util');
-import chalk from 'chalk';
-
-import { getPropertyFromStructure, Logger, getPropertyList, getPropertyListValues } from './helpers';
-import { createCustomWidgetObject, handleWidget} from './widgets';
+import { getPropertyFromStructure, Logger } from './helpers';
 import { handleSnippet } from "./snippets";
+import Store from './store';
+import { handleWidget } from './widgets';
 
 export function processPagesElements(allPages: pages.Page[], sheet: Sheet, moduleName: string, logger: Logger, store: Store) {
     return new Promise((resolve, reject) => {
@@ -77,22 +71,3 @@ export function processPagesElements(allPages: pages.Page[], sheet: Sheet, modul
         resolve();
     });
 }
-
-/*
-TYPE: [ 'key',
-  'category',
-  'caption',
-  'description',
-  'isDefault',
-  'valueType' ]
-VALUE: [ 'type',
-  'primitiveValue',
-  'entityPath',
-  'attributePath',
-  'page',
-  'microflow',
-  'image',
-  'translatableValue',
-  'xPathConstraint',
-  'objects' ]
-*/

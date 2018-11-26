@@ -1,6 +1,5 @@
-import { IStructure, AbstractProperty, IModel, pages, microflows, customwidgets } from "mendixmodelsdk";
-import * as _ from 'lodash';
 import chalk from 'chalk';
+import { AbstractProperty, IModel, IStructure, microflows, pages } from "mendixmodelsdk";
 import when = require('when');
 
 export function getPropertyFromStructure(structure: IStructure , propName: string): AbstractProperty<any, any> {
