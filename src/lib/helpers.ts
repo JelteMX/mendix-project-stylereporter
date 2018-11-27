@@ -16,7 +16,7 @@ export function getPropertyList(structure: IStructure) {
     return structure.allProperties().map(prop => prop.name).filter(n => typeof n !== 'undefined');
 }
 
-function loadDocuments(all: any[], identifier?: string): When.Promise<any> {
+function loadDocuments<T>(all: any[], identifier?: string): When.Promise<T> {
     let loaded = 0;
     console.log(`Loading ${all.length} ${identifier}s`);
     return when
@@ -34,23 +34,23 @@ function loadDocuments(all: any[], identifier?: string): When.Promise<any> {
 }
 
 export function loadAllLayouts(model: IModel): When.Promise<pages.Layout[]> {
-    return (<When.Promise<pages.Layout[]>>loadDocuments(model.allLayouts(), 'layout'));
+    return loadDocuments(model.allLayouts(), 'layout');
 }
 
 export function loadAllPages(model: IModel): When.Promise<pages.Page[]> {
-    return (<When.Promise<pages.Page[]>>loadDocuments(model.allPages(), 'page'));
+    return loadDocuments(model.allPages(), 'page');
 }
 
 export function loadAllSnippets(model: IModel): When.Promise<pages.Snippet[]> {
-    return (<When.Promise<pages.Snippet[]>>loadDocuments(model.allSnippets(), 'snippet'));
+    return loadDocuments(model.allSnippets(), 'snippet');
 }
 
 export function loadAllMicroflows(model: IModel): When.Promise<microflows.Microflow[]> {
-    return (<When.Promise<microflows.Microflow[]>>loadDocuments(model.allMicroflows(), 'microflow'));
+    return loadDocuments(model.allMicroflows(), 'microflow');
 }
 
 export function loadAllJavaActions(model: IModel): When.Promise<javaactions.JavaAction[]> {
-    return (<When.Promise<javaactions.JavaAction[]>>loadDocuments(model.allJavaActions(), 'javaaction'));
+    return loadDocuments(model.allJavaActions(), 'javaaction');
 }
 
 export interface Logger {

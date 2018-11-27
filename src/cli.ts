@@ -34,7 +34,6 @@ const jsonFileName =    typeof JSON_FILE !== 'undefined' ? JSON_FILE : '';
 const logger = new Logger(typeof VERBOSE !== 'undefined' ? VERBOSE === 'true' : false);
 const store = new Store();
 
-const revNo = -1; // -1 for latest
 const branchName = typeof BRANCH !== 'undefined' ? BRANCH : null;
 
 const excelFile = new Excel();
@@ -74,6 +73,7 @@ const client = new MendixSdkClient(MODEL_SDK_USER, MODEL_SDK_TOKEN);
 const project = new Project(client, PROJECT_ID, PROJECT_TITLE);
 
 function loadWorkingCopy():Promise<OnlineWorkingCopy> {
+    const revNo = -1; // -1 for latest
     return new Promise((resolve, reject) => {
         client
         .platform()
