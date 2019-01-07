@@ -17,3 +17,4 @@ lib-cov
 *DS_Store*
 .env
 .env.example
+*.dat
