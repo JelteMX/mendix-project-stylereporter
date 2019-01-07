@@ -11,7 +11,7 @@ function logTopLevel(logger:Logger, layout: pages.Layout) {
     logger.log(`    ${logger.el('style')}:     ${layout.style}`);
 }
 
-export function processLayouts(layouts: pages.Layout[], sheet: Sheet, moduleName: string, logger: Logger, store: Store) {
+export function processLayouts(layouts: pages.Layout[], sheet: Sheet, moduleName: string, logger: Logger, store: Store): Promise<void> {
     return new Promise((resolve, reject) => {
         layouts.forEach(layout => {
             logTopLevel(logger, layout);

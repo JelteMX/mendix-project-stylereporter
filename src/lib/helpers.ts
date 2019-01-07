@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { AbstractProperty, IModel, IStructure, microflows, pages, Model, javaactions } from "mendixmodelsdk";
+import { AbstractProperty, IModel, IStructure, microflows, pages, javaactions } from "mendixmodelsdk";
 import when = require('when');
 
 export function getPropertyFromStructure(structure: IStructure , propName: string): AbstractProperty<any, any> {
@@ -12,7 +12,7 @@ export function getPropertyListValues(structure: IStructure, props: string[]): A
     return properties || [];
 }
 
-export function getPropertyList(structure: IStructure) {
+export function getPropertyList(structure: IStructure): string[] {
     return structure.allProperties().map(prop => prop.name).filter(n => typeof n !== 'undefined');
 }
 
