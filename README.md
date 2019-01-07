@@ -34,9 +34,6 @@ MODEL_SDK_TOKEN=xxxxxxx
 PROJECT_ID=xxxxxx
 PROJECT_TITLE=Forum
 
-# Providing a working copy will skip the get part
-# WORKING_COPY=xxxxx
-
 # Filter on a certain module
 MODULE_NAME=''
 
@@ -50,7 +47,7 @@ The ``MODEL_SDK_TOKEN`` can be found in Sprintr, as well as the ``PROJECT_ID`` a
 
 ### Working copy
 
-The first time you run this tool, you will not have a working copy. Based on the variables as set above, it will create one. This can take up to two minutes. Once this is done, it will tell you what the working copy id is. Copy this value and add it to the ``.env`` variable (Just uncomment **WORKING_COPY** and add the value)
+The first time you run this tool, you will not have a working copy. Based on the variables as set above, it will create one. This can take up to two minutes. Once this is done, it will store the working copy id in a local `reporter-cache-XXXXXX.dat` (encrypted). This way a working copy can be reused in 24h. After the working copy is made, it will resume the rest of the script.
 
 ### Output
 

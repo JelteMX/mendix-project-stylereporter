@@ -1,27 +1,24 @@
-import { MendixSdkClient, OnlineWorkingCopy, Project, Revision, Branch, loadAsPromise } from "mendixplatformsdk";
-import { ModelSdkClient, IModel, Model, projects, domainmodels, microflows, pages, navigation, customwidgets, texts, security, IStructure, menus, AbstractProperty } from "mendixmodelsdk";
-
-import when = require('when');
-import { Sheet } from "../excel";
+import { customwidgets, pages } from "mendixmodelsdk";
+import { Sheet } from "./excel";
+import { getPropertyFromStructure, Logger } from './helpers';
+import { handleSnippet } from "./snippets";
 import Store from './store';
-import util = require('util');
-import chalk from 'chalk';
+import { handleWidget } from './widgets';
 
-import { getPropertyFromStructure, getPropertyList, Logger } from './helpers';
-
-export function loadAllLayouts(model: IModel): When.Promise<pages.Layout[]> {
-    return when.all(model.allLayouts().map(layout => new Promise((resolve, reject) => { layout.load(resolve) })));
+function logTopLevel(logger:Logger, layout: pages.Layout) {
+    logger.log(`  ${logger.el('name')}:        ${layout.qualifiedName}`);
+    logger.log(`    ${logger.el('class')}:     ${layout.class}`);
+    logger.log(`    ${logger.el('style')}:     ${layout.style}`);
 }
 
-export function processLayouts(layouts: pages.Layout[], sheet: Sheet, moduleName: string, logger: Logger, store: Store) {
+export function processLayouts(layouts: pages.Layout[], sheet: Sheet, moduleName: string, logger: Logger, store: Store): Promise<void> {
     return new Promise((resolve, reject) => {
         layouts.forEach(layout => {
-            logger.log(`  ${logger.el('name')}:        ${layout.qualifiedName}`);
-            logger.log(`    ${logger.el('class')}:     ${layout.class}`);
-            logger.log(`    ${logger.el('style')}:     ${layout.style}`);
+            logTopLevel(logger, layout);
 
             sheet.addLine([
                 'Layout',
+                layout.excluded ? 'true' : 'false',
                 layout.qualifiedName,
                 '',
                 '---',
@@ -36,52 +33,39 @@ export function processLayouts(layouts: pages.Layout[], sheet: Sheet, moduleName
             layout.traverse(structure => {
                 let line = [
                     'Layout',
+                    layout.excluded ? 'true' : 'false',
                     layout.qualifiedName,
                     '',
-                    structure.structureTypeName.replace('Pages$', '')
+                    structure.structureTypeName.replace('Pages$', '').replace('CustomWidgets$', '')
                 ];
                 const nameElProp = getPropertyFromStructure(structure, `name`);
                 const classElProp = getPropertyFromStructure(structure, `class`);
                 const styleElProp = getPropertyFromStructure(structure, `style`);
                 if (nameElProp && !(structure instanceof pages.Layout)) {
-                    line.push(nameElProp.get());
-                    logger.log(`       ${logger.el('name')}:        ${nameElProp.get()}`);
+                    const name = nameElProp.get();
+                    line.push(name);
+                    logger.log(`       ${logger.el('name')}:        ${name}`);
                     logger.log(`         ${logger.el('type')}:      ${structure.structureTypeName.replace('Pages$', '')}`);
                     if (classElProp) {
-                        logger.log(`         ${logger.el('class')}:     ${classElProp.get()}`);
-                        store.addClasses(classElProp.get());
-                        line.push(classElProp.get());
+                        const className = classElProp.get();
+                        logger.log(`         ${logger.el('class')}:     ${className}`);
+                        store.addClasses(className);
+                        line.push(className);
                     }
                     if (styleElProp) {
-                        logger.log(`         ${logger.el('style')}:     ${styleElProp.get()}`);
-                        line.push(styleElProp.get());
+                        const style = styleElProp.get();
+                        logger.log(`         ${logger.el('style')}:     ${style}`);
+                        line.push(style);
                     }
 
                     if (structure instanceof pages.SnippetCallWidget) {
-                        const snippetStructure = structure as pages.SnippetCallWidget;
-                        const snippetCall = getPropertyFromStructure(snippetStructure, `snippetCall`).get();
-                        const snippet = getPropertyFromStructure(snippetCall, 'snippet').get() as pages.ISnippet;
-                        if (snippet) {
-                            logger.log(`    ${logger.spec('snippet')}:   ${snippet.qualifiedName}`);
-                            line.push(snippet.qualifiedName);
-                            store.addSnippet(snippet.qualifiedName, `Layout:${layout.qualifiedName}`);
-                        } else {
-                            logger.log(`    ${logger.spec('snippet')}:   ${chalk.red('unknown')}`);
-                            line.push('-unknown-');
-                        }
+                        handleSnippet(structure, logger, line, store, `Layout:${layout.qualifiedName}`);
                     } else {
                         line.push('');
                     }
 
                     if (structure instanceof customwidgets.CustomWidget) {
-                        const widgetStructure = structure as customwidgets.CustomWidget;
-                        const widgetJSON = widgetStructure.toJSON() as any;
-                        const widgetID = widgetJSON.type && widgetJSON.type.widgetId || null;
-                        logger.log(`         ${logger.spec('widget')}:    ${widgetID}`);
-                        line.push(widgetID);
-                        if (widgetID !== null) {
-                            store.addWidget(widgetID, `Layout:${layout.qualifiedName}`);
-                        }
+                        handleWidget(structure, logger, line, name, store, `Layout:${layout.qualifiedName}`);
                     }
 
                     sheet.addLine(line);

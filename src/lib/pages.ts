@@ -1,16 +1,15 @@
-import { MendixSdkClient, OnlineWorkingCopy, Project, Revision, Branch, loadAsPromise } from "mendixplatformsdk";
-import { ModelSdkClient, IModel, Model, projects, domainmodels, microflows, pages, customwidgets, navigation, texts, security, IStructure, menus, AbstractProperty } from "mendixmodelsdk";
-
-import when = require('when');
-import { Sheet } from "../excel";
+import { customwidgets, pages } from "mendixmodelsdk";
+import { Sheet } from "./excel";
+import { getPropertyFromStructure, Logger, logSublevel } from './helpers';
+import { handleSnippet } from "./snippets";
 import Store from './store';
-import util = require('util');
-import chalk from 'chalk';
+import { handleWidget } from './widgets';
 
-import { getPropertyFromStructure, Logger } from './helpers';
-
-export function loadAllPages(model: IModel): When.Promise<pages.Page[]> {
-    return when.all(model.allPages().map(page => new Promise((resolve, reject) => { page.load(resolve) })));
+function logTopLevel(logger:Logger, page: pages.Page) {
+    logger.log(`${logger.el('name')}:       ${page.qualifiedName}`);
+    logger.log(`${logger.el('layout')}:     ${page.layoutCall.layoutQualifiedName}`);
+    logger.log(`${logger.el('classNames')}: ${page.class}`);
+    logger.log(`${logger.el('styles')}:     ${page.style}`);
 }
 
 export function processPagesElements(allPages: pages.Page[], sheet: Sheet, moduleName: string, logger: Logger, store: Store) {
@@ -19,13 +18,11 @@ export function processPagesElements(allPages: pages.Page[], sheet: Sheet, modul
             if (moduleName !== '' && page.qualifiedName.indexOf(moduleName) !== 0) {
                 return;
             }
-            logger.log(`${logger.el('name')}:       ${page.qualifiedName}`);
-            logger.log(`${logger.el('layout')}:     ${page.layoutCall.layoutQualifiedName}`);
-            logger.log(`${logger.el('classNames')}: ${page.class}`);
-            logger.log(`${logger.el('styles')}:     ${page.style}`);
+            logTopLevel(logger, page);
 
             sheet.addLine([
                 'Page',
+                page.excluded ? 'true' : 'false',
                 page.qualifiedName,
                 page.layoutCall.layoutQualifiedName,
                 '---',
@@ -39,53 +36,38 @@ export function processPagesElements(allPages: pages.Page[], sheet: Sheet, modul
 
             logger.log(`${logger.el('elements')}:`);
             page.traverse(structure => {
-                let line: string[];
                 const nameProp = getPropertyFromStructure(structure, `name`);
                 const classProp = getPropertyFromStructure(structure, `class`);
                 const styleProp = getPropertyFromStructure(structure, `style`);
                 if (nameProp && classProp && !(structure instanceof pages.Page)) {
-                    logger.log(`  ${logger.el('name')}:        ${nameProp.get()}`);
-                    logger.log(`    ${logger.el('type')}:      ${structure.structureTypeName.replace('Pages$', '')}`);
-                    logger.log(`    ${logger.el('class')}:     ${classProp.get()}`);
-                    logger.log(`    ${logger.el('style')}:     ${styleProp.get()}`);
+                    logSublevel(logger, {
+                        name: <string>nameProp.get(),
+                        type: <string>structure.structureTypeName.replace('Pages$', ''),
+                        className: <string>classProp.get(),
+                        style: <string>styleProp.get()
+                    });
 
                     store.addClasses(classProp.get());
 
-                    line = [
+                    let line = [
                         'Page',
+                        page.excluded ? 'true' : 'false',
                         page.qualifiedName,
                         '',
-                        structure.structureTypeName.replace('Pages$', ''),
+                        structure.structureTypeName.replace('Pages$', '').replace('CustomWidgets$', ''),
                         nameProp.get(),
                         classProp.get(),
                         styleProp.get()
                     ];
 
                     if (structure instanceof pages.SnippetCallWidget) {
-                        const snippetStructure = structure as pages.SnippetCallWidget;
-                        const snippetCall = getPropertyFromStructure(snippetStructure, `snippetCall`).get();
-                        const snippet = getPropertyFromStructure(snippetCall, 'snippet').get() as pages.ISnippet;
-                        if (snippet) {
-                            logger.log(`    ${logger.spec('snippet')}:   ${snippet.qualifiedName}`);
-                            line.push(snippet.qualifiedName);
-                            store.addSnippet(snippet.qualifiedName, `Page:${page.qualifiedName}`);
-                        } else {
-                            logger.log(`    ${logger.spec('snippet')}:   ${chalk.red('unknown')}`);
-                            line.push('-unknown-');
-                        }
+                        handleSnippet(structure, logger, line, store, `Page:${page.qualifiedName}`);
                     } else {
                         line.push('');
                     }
 
                     if (structure instanceof customwidgets.CustomWidget) {
-                        const widgetStructure = structure as customwidgets.CustomWidget;
-                        const widgetJSON = widgetStructure.toJSON() as any;
-                        const widgetID = widgetJSON.type && widgetJSON.type.widgetId || null;
-                        logger.log(`    ${logger.spec('widget')}:    ${widgetID}`);
-                        line.push(widgetID);
-                        if (widgetID !== null) {
-                            store.addWidget(widgetID, `Page:${page.qualifiedName}`);
-                        }
+                        handleWidget(structure, logger, line, nameProp.get(), store, `Page:${page.qualifiedName}`);
                     }
 
                     sheet.addLine(line);

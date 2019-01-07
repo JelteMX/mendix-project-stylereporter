@@ -1,16 +1,38 @@
-import { MendixSdkClient, OnlineWorkingCopy, Project, Revision, Branch, loadAsPromise } from "mendixplatformsdk";
-import { ModelSdkClient, IModel, Model, projects, domainmodels, customwidgets, microflows, pages, navigation, texts, security, IStructure, menus, AbstractProperty } from "mendixmodelsdk";
-
-import when = require('when');
-import { Sheet } from "../excel";
-import Store from './store';
-import util = require('util');
 import chalk from 'chalk';
+import { customwidgets, IStructure, pages } from "mendixmodelsdk";
+import { Sheet } from "./excel";
+import { getPropertyFromStructure, Logger, logSublevel } from './helpers';
+import Store from './store';
+import { handleWidget } from './widgets';
 
-import { getPropertyFromStructure, Logger, getPropertyList } from './helpers';
+export function handleSnippet(structure: IStructure, logger: Logger, line: string[], store: Store, location: string) {
+    const snippetStructure = structure as pages.SnippetCallWidget;
+    const snippetCall = snippetStructure.snippetCall;
+    const snippet = snippetCall instanceof pages.SnippetCall ? snippetCall.snippet : false;
 
-export function loadAllSnippets(model: IModel): When.Promise<pages.Snippet[]> {
-    return when.all(model.allSnippets().map(snippet => new Promise((resolve, reject) => { snippet.load(resolve) })));
+    if (snippet instanceof pages.Snippet) {
+        logger.log(`    ${logger.spec('snippet')}:   ${snippet.qualifiedName}`);
+        line.push(snippet.qualifiedName);
+        store.addSnippet(snippet.qualifiedName, location);
+    } else if (snippet === null) {
+        const aPArray = snippetCall.allProperties().filter(aP => aP.name === 'snippet');
+        let val = '';
+        if (aPArray.length === 1) {
+            const sn = aPArray[0];
+            val = sn.observableValue && sn.observableValue.value || false;
+        }
+        if (val !== '') {
+            logger.log(`    ${logger.spec('snippet')}:   ${val}`);
+            line.push(val);
+            store.addSnippet(val, location);
+        } else {
+            logger.log(`    ${logger.spec('snippet')}:   ${chalk.red('unknown')}`);
+            line.push('-unknown-');
+        }
+    } else {
+        logger.log(`    ${logger.spec('snippet')}:   ${chalk.red('unknown')}`);
+        line.push('-unknown-');
+    }
 }
 
 export function processSnippets(snippets: pages.Snippet[], sheet: Sheet, moduleName: string, logger: Logger, store: Store) {
@@ -24,6 +46,7 @@ export function processSnippets(snippets: pages.Snippet[], sheet: Sheet, moduleN
 
             sheet.addLine([
                 'Snippet',
+                snippet.excluded ? 'true' : 'false',
                 snippet.qualifiedName,
                 '',
                 '---',
@@ -31,54 +54,39 @@ export function processSnippets(snippets: pages.Snippet[], sheet: Sheet, moduleN
             ]);
 
             snippet.traverse(structure => {
-                let line: string[];
                 const nameProp = getPropertyFromStructure(structure, `name`);
                 const classProp = getPropertyFromStructure(structure, `class`);
                 const styleProp = getPropertyFromStructure(structure, `style`);
                 if (nameProp && classProp && !(structure instanceof pages.Page)) {
 
-                    line = [
+                    let line = [
                         'Snippet',
+                        snippet.excluded ? 'true' : 'false',
                         snippet.qualifiedName,
                         '',
-                        structure.structureTypeName.replace('Pages$', ''),
+                        structure.structureTypeName.replace('Pages$', '').replace('CustomWidgets$', ''),
                         nameProp.get(),
                         classProp.get(),
                         styleProp.get()
                     ];
 
-                    logger.log(`  ${logger.el('name')}:        ${nameProp.get()}`);
-                    logger.log(`    ${logger.el('type')}:      ${structure.structureTypeName.replace('Pages$', '')}`);
-                    logger.log(`    ${logger.el('class')}:     ${classProp.get()}`);
-                    logger.log(`    ${logger.el('style')}:     ${styleProp.get()}`);
+                    logSublevel(logger, {
+                        name: <string>nameProp.get(),
+                        type: <string>structure.structureTypeName.replace('Pages$', ''),
+                        className: <string>classProp.get(),
+                        style: <string>styleProp.get()
+                    });
 
                     store.addClasses(classProp.get());
 
                     if (structure instanceof pages.SnippetCallWidget) {
-                        const snippetStructure = structure as pages.SnippetCallWidget;
-                        const snippetCall = getPropertyFromStructure(snippetStructure, `snippetCall`).get();
-                        const subsnippet = getPropertyFromStructure(snippetCall, 'snippet').get() as pages.ISnippet;
-                        if (subsnippet) {
-                            logger.log(`    ${logger.spec('snippet')}:   ${subsnippet.qualifiedName}`);
-                            line.push(subsnippet.qualifiedName);
-                            store.addSnippet(subsnippet.qualifiedName, `Snippet:${snippet.qualifiedName}`);
-                        } else {
-                            logger.log(`    ${logger.spec('snippet')}:   ${chalk.red('unknown')}`);
-                            line.push('-unknown-');
-                        }
+                        handleSnippet(structure, logger, line, store, `Snippet:${snippet.qualifiedName}`);
                     } else {
                         line.push('');
                     }
 
                     if (structure instanceof customwidgets.CustomWidget) {
-                        const widgetStructure = structure as customwidgets.CustomWidget;
-                        const widgetJSON = widgetStructure.toJSON() as any;
-                        const widgetID = widgetJSON.type && widgetJSON.type.widgetId || null;
-                        logger.log(`    ${logger.spec('widget')}:    ${widgetID}`);
-                        line.push(widgetID);
-                        if (widgetID !== null) {
-                            store.addWidget(widgetID, `Snippet:${snippet.qualifiedName}`);
-                        }
+                        handleWidget(structure, logger, line, nameProp.get(), store, `Snippet:${snippet.qualifiedName}`);
                     }
 
                     sheet.addLine(line);
